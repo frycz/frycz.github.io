@@ -1,1 +1,61 @@
-theme: jekyll-theme-cayman
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely need to edit after that.
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+title: Young Rok Kim
+email: rok0810@gmail.com
+description: "Software Engineer, Mobile Enthusiast."
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "" # the base hostname & protocol for your site
+twitter_username: rokoroku1
+github_username:  rokoroku
+
+# Build settings
+markdown: kramdown
+
+# Collections (unstable)
+collections:
+  works:
+    output: true
+
+#
+###################################
+# Site Owner configuration
+####################################
+#
+owner:
+  name: Young Rok Kim
+  avatar: avatar.jpg
+  job: "Software Engineer at <a href=\"https://github.com/sini-company\" target=\"_blank\">@sinicompany</a>"
+  bio: "A software guru wannabe"
+  email: rok0810@gmail.com
+  disqus-shortname: "rokoroku"
+  twitter: #username
+  facebook: #username
+  google:
+    plus: #username
+    analytics: UA-44044751-5
+    verify:
+    ad-client:
+    ad-slot:
+  bing-verify:
+  github: rokoroku
+  stackoverflow: #123456/username   from a "http://stackoverflow.com/users/123456/username" link
+  linkedin: #username
+  xing: #username
+  instagram: #username
+  lastfm: #username
+  tumblr: #username
+  pinterest: #username
+  foursquare: #username
+  steam: #username
+  dribbble: #username
+  youtube: #username
+  soundcloud: #username
+  weibo: #username
+  flickr: #username
+  codepen: #username
