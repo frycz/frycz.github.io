@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Chicken Raider (Android)</title>
+  
+  <meta name="description" content="Your go-to app for discovering the best chicken restaurant, with fun gamification.">
+
+  <!-- <link rel="stylesheet" href="/css/main.css"> -->
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/pygment-trac.css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css">
+
+  <link rel="canonical" href="http://localhost:4000/works/Chicken-Raider.html">
+  <link rel="alternate" type="application/rss+xml" title="Adam Sawicki" href="http://localhost:4000/feed.xml">
+
+  <script src="/js/scale-fix.js"></script>
+
+  
+
+</head>
+
+  <body>
+      <div class="wrapper">
+        
+
+<header>
+	<div class="author">
+		<img src="http://localhost:4000/img/avatar.jpg" alt="" class="avatar">
+		<span class="author_name">Adam Sawicki</span>
+		<span class="author_job">Software Engineer at Symphony Solutions</span>
+		<span class="author_bio mbm"></span>
+	</div>
+	<div class="social-links">
+  <ul>
+    <li><a href="mailto:adamsawicki89@gmail.com" class="social-link-item" target="_blank"><i class="fa fa-fw fa-envelope"></i> adamsawicki89@gmail.com</a></li>
+    
+    
+    
+    
+    
+    
+    
+    <li><a href="http://github.com/frycz" class="social-link-item" target="_blank"><i class="fa fa-fw fa-github"></i> frycz</a></li>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  </ul>
+</div>
+
+
+	<br>
+
+
+	<!-- <nav>
+	<ul>
+		<li>
+			<a href="/">Works</a>
+		</li>
+		<li>
+			<a href="/resume/">Resume</a>
+		</li>
+	</ul>
+	</nav> -->
+
+</header>
+
+        <section>
+          <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <h1 class="post-title" itemprop="name headline">Chicken Raider (Android)</h1>
+    <p class="post-meta">
+	<!-- time -->
+    <time datetime="2015-11-16T13:00:00+01:00" itemprop="datePublished">Nov 16, 2015</time>
+    <!-- catgory -->
+	 • <a class="post-cat" href="#">Draft</a>
+	<!-- author -->
+    
+    </p>
+
+    
+    	
+	    
+
+<link rel="stylesheet"  href="http://localhost:4000/css/magnific-popup.css"/>
+<link rel="stylesheet"  href="http://localhost:4000/css/lightslider.css"/>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://localhost:4000/js/jquery.magnific-popup.js"></script> 
+<script src="http://localhost:4000/js/lightslider.js"></script> 
+<script>
+	$(document).ready(function() {
+		$('#image-gallery').lightSlider({
+            // gallery:true,
+            item:3,
+            speed:1000,
+            auto:true,
+            loop:false,
+            controls:false,
+            thumbItem: 3,
+            responsive: [
+            {
+            	breakpoint: 580,
+            	settings: {
+            		item: 1,
+            		slideMove:1,
+            	}
+            }
+            ],
+            onSliderLoad: function(el) {
+            	el.removeClass('cS-hidden');
+            	el.magnificPopup({
+            		delegate: 'a',
+            		type: 'image',
+            		closeOnContentClick: true,
+            		closeBtnInside: false,
+            		fixedContentPos: true,
+			        mainClass: 'mfp-no-margins mfp-with-zoom', // class to remove default margin from left and right side
+			        image: {
+		        	  	verticalFit: true
+			        },
+			        zoom: {
+			         	enabled: true,
+			            duration: 300 // don't foget to change the duration also in CSS
+			        }
+			    });
+            }
+        });
+	});
+</script>
+
+<div class="image-gallery">            
+	<ul id="image-gallery" class="gallery list-unstyled cS-hidden">
+		
+		<li data-thumb="http://localhost:4000/img/chicken-raider-screenshot-1.png"> 
+			<a href="http://localhost:4000/img/chicken-raider-screenshot-1.png" data-effect="mfp-zoom-in">
+				<img src="http://localhost:4000/img/chicken-raider-screenshot-1.png"/>
+			</a>
+		</li>
+		
+		<li data-thumb="http://localhost:4000/img/chicken-raider-screenshot-2.jpg"> 
+			<a href="http://localhost:4000/img/chicken-raider-screenshot-2.jpg" data-effect="mfp-zoom-in">
+				<img src="http://localhost:4000/img/chicken-raider-screenshot-2.jpg"/>
+			</a>
+		</li>
+		
+		<li data-thumb="http://localhost:4000/img/chicken-raider-screenshot-3.jpg"> 
+			<a href="http://localhost:4000/img/chicken-raider-screenshot-3.jpg" data-effect="mfp-zoom-in">
+				<img src="http://localhost:4000/img/chicken-raider-screenshot-3.jpg"/>
+			</a>
+		</li>
+		
+	</ul>
+</div>
+
+    
+
+  <div class="post-content" itemprop="articleBody">
+    <h4 id="chicken-restraurant-review-sns-providing-instant-chicken-gathering-with-your-friends">Chicken restraurant review SNS providing instant chicken gathering with your friends.</h4>
+
+<ul>
+  <li>Inspired by prior <a href="http://localhost:4000/works/Party-Recruit.html">Party Recruit</a> service.</li>
+  <li>Manipulate <a href="https://developers.google.com/places/">Google Places API</a> for collecting user reviews with <a href="https://www.djangoproject.com/">Django</a> as backend.</li>
+  <li>Gamification - make users conquer the restraurants and collect kudos and trophies.</li>
+</ul>
+
+<p>Copyright</p>
+
+<ul>
+  <li>Chicken + Beer icon by <a href="https://dribbble.com/shots/2092902-Chicken-Beer">George Otsubo</a></li>
+  <li>Winner Winner Chicken image by <a href="https://dribbble.com/shots/1813066-Winner-Winner-Chicken-Honey-Dinner">Jay Fletcher</a></li>
+</ul>
+
+  </div>
+
+   
+  <div id="disqus_thread" class="post-comment"></div> 
+  <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'frycz';
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+ 
+    
+
+</article>
+
+        </section>
+        <footer>
+  <p>&copy; 2018 Adam Sawicki.</p>
+</footer>
+      </div>
+  </body>
+</html>

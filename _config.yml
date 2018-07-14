@@ -6,13 +6,13 @@
 # 'jekyll serve'. If you change this file, please restart the server process.
 
 # Site settings
-title: Young Rok Kim
-email: rok0810@gmail.com
-description: "Software Engineer, Mobile Enthusiast."
+title: Adam Sawicki
+email: adamsawicki89@gmail.com
+description: "Front-end developer"
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site
-twitter_username: rokoroku1
-github_username:  rokoroku
+twitter_username: _adamsawicki
+github_username:  frycz
 
 # Build settings
 markdown: kramdown
@@ -28,22 +28,22 @@ collections:
 ####################################
 #
 owner:
-  name: Young Rok Kim
+  name: Adam Sawicki
   avatar: avatar.jpg
-  job: "Software Engineer at <a href=\"https://github.com/sini-company\" target=\"_blank\">@sinicompany</a>"
-  bio: "A software guru wannabe"
-  email: rok0810@gmail.com
-  disqus-shortname: "rokoroku"
+  job: "Software Engineer at Symphony Solutions"
+  bio: ""
+  email: adamsawicki89@gmail.com
+  disqus-shortname: "frycz"
   twitter: #username
   facebook: #username
   google:
     plus: #username
-    analytics: UA-44044751-5
+    analytics: #UA-XXXXXXXX-X
     verify:
     ad-client:
     ad-slot:
   bing-verify:
-  github: rokoroku
+  github: frycz
   stackoverflow: #123456/username   from a "http://stackoverflow.com/users/123456/username" link
   linkedin: #username
   xing: #username
