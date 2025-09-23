@@ -1,1 +1,0 @@
-# frycz.github.io
