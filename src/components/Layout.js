@@ -14,7 +14,7 @@ const Layout = ({ children, title, subtitle }) => {
       </div>
 
       <Header
-        title={title || "Adam Sawicki — Software Developer"}
+        title={title || "Adam Sawicki — Software Engineer"}
         subtitle={subtitle || "Building reliable systems."}
       />
 

@@ -68,7 +68,7 @@ export default IndexPage;
 
 export const Head = () => (
   <>
-    <title>Adam Sawicki — Software Developer</title>
+    <title>Adam Sawicki — Software Engineer</title>
     <meta name="description" content="Building reliable systems." />
   </>
 );

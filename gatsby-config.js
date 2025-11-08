@@ -1,6 +1,6 @@
 module.exports = {
   siteMetadata: {
-    title: "Adam Sawicki — Software Developer",
+    title: "Adam Sawicki — Software Engineer",
     description: "Building reliable systems.",
     author: "Adam",
     siteUrl: "https://frycz.github.io",
