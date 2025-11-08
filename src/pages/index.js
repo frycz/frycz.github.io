@@ -28,6 +28,10 @@ const IndexPage = () => {
           (Claude Code, CursorAI, Gemini, and more) into my daily workflow - it
           boosts my productivity and helps me experiment with new solutions.
         </p>
+        <p>
+          In my free time, I like trying new tools, libraries and ideas. I ride
+          a bike, workout at the gym, hike, and enjoy drip coffee.
+        </p>
       </section>
 
       <section aria-labelledby="work-heading">
@@ -45,9 +49,7 @@ const IndexPage = () => {
       <section aria-labelledby="projects-heading">
         <h2 id="projects-heading">Side projects</h2>
         <ul className="inline">
-          <li>Minimal static site starter (text-first, no build tooling).</li>
-          <li>CLI utilities for workflow automation.</li>
-          <li>Small experimental services for learning and fun.</li>
+          <li>[Coming soon].</li>
         </ul>
       </section>
 

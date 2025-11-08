@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="container" role="contentinfo">
       <p className="muted">
-        © {currentYear} Adam. Text-only. Monospace. Built with care.
+        © {currentYear} Adam Sawicki
       </p>
     </footer>
   );
