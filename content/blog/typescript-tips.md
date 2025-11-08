@@ -4,7 +4,7 @@ date: "2024-04-05"
 slug: "typescript-tips"
 ---
 
-TypeScript has become my go-to language for building reliable software. Here are some patterns and practices that have improved my codebase quality.
+TypeScript has become my go-to language for Building reliable systems. Here are some patterns and practices that have improved my codebase quality.
 
 ## Use Strict Mode
 

@@ -8,23 +8,37 @@ const IndexPage = () => {
       <section aria-labelledby="about-heading">
         <h2 id="about-heading">About me</h2>
         <p>
-          I'm a software developer who enjoys turning complex problems into
-          small, dependable systems. I work across the stack with a focus on
-          TypeScript, Node.js, and modern web foundations.
+          I am a software engineer with over 12 years of professional
+          experience. During that time, I worked on a variety of web-oriented
+          projects with different architectures, approaches and technologies.
+          Examples are: medical software, e-commerce platforms, ETL pipelines
+          and more. Thanks to that, I got a solid understanding of web
+          development challenges and I feel comfortable working across the full
+          application stack - both front-end and back-end.
+        </p>
+        <p>
+          My role goes beyond writing code. In my current project (an ETL
+          pipeline) I participate in designing and implementing technical
+          strategies, I lead engineering teams during features implementation,
+          and actively mentor other developers, helping them grow and improve
+          their technical skills.
+        </p>
+        <p>
+          I believe in the AI revolution and I actively integrate AI tools
+          (Claude Code, CursorAI, Gemini, and more) into my daily workflow - it
+          boosts my productivity and helps me experiment with new solutions.
         </p>
       </section>
 
       <section aria-labelledby="work-heading">
         <h2 id="work-heading">Work experience</h2>
         <ul className="inline">
-          <li>
-            Senior Software Developer — [Your Company], [Years]. Focused on
-            platform reliability, DX, and performance.
-          </li>
-          <li>
-            Software Developer — [Previous Company], [Years]. Shipped web
-            apps and services used by thousands.
-          </li>
+          <li>Staff Software Engineer @ Adverity, 2022 - present.</li>
+          <li>Senior Software Engineer @ Adverity, 2020 - 2022.</li>
+          <li>Senior Software Engineer @ Symphony Solutions, 2019 - 2020.</li>
+          <li>Software Engineer @ Symphony Solutions, 2017 - 2019.</li>
+          <li>Software Engineer @ Cyfrowa Foto, 2015 - 2017.</li>
+          <li>Software Engineer @ Soft System, 2013 - 2015.</li>
         </ul>
       </section>
 
@@ -40,8 +54,8 @@ const IndexPage = () => {
       <section aria-labelledby="blog-heading">
         <h2 id="blog-heading">Blog</h2>
         <p>
-          I occasionally write about software development, tools, and
-          workflows. <Link to="/blog">Read my posts →</Link>
+          I occasionally write about software development, tools, and workflows.{" "}
+          <Link to="/blog">Read my posts →</Link>
         </p>
       </section>
     </Layout>
@@ -52,7 +66,7 @@ export default IndexPage;
 
 export const Head = () => (
   <>
-    <title>Adam — Software Developer</title>
-    <meta name="description" content="Building reliable, minimal, and fast software." />
+    <title>Adam Sawicki — Software Developer</title>
+    <meta name="description" content="Building reliable systems." />
   </>
 );

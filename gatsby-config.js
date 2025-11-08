@@ -1,8 +1,7 @@
 module.exports = {
-  pathPrefix: "/",
   siteMetadata: {
-    title: "Adam — Software Developer",
-    description: "Building reliable, minimal, and fast software.",
+    title: "Adam Sawicki — Software Developer",
+    description: "Building reliable systems.",
     author: "Adam",
     siteUrl: "https://frycz.github.io",
   },

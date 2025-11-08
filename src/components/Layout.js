@@ -14,8 +14,8 @@ const Layout = ({ children, title, subtitle }) => {
       </div>
 
       <Header
-        title={title || "Adam — Software Developer"}
-        subtitle={subtitle || "Building reliable, minimal, and fast software."}
+        title={title || "Adam Sawicki — Software Developer"}
+        subtitle={subtitle || "Building reliable systems."}
       />
 
       <main id="content" className="container" role="main">
