@@ -6,7 +6,15 @@ const BlogPage = ({ data }) => {
   const posts = data.allMarkdownRemark.edges;
 
   return (
-    <Layout title="Blog" subtitle="Thoughts on software development and technology.">
+    <Layout
+      title="Blog"
+      subtitle="Thoughts on software development and technology."
+      headerNav={
+        <p className="header-nav">
+          <Link to="/">← Back to main page</Link>
+        </p>
+      }
+    >
       <section>
         <ul className="blog-list">
           {posts.map(({ node }) => (

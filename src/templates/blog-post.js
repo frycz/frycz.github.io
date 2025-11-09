@@ -6,7 +6,15 @@ const BlogPostTemplate = ({ data }) => {
   const post = data.markdownRemark;
 
   return (
-    <Layout title={post.frontmatter.title} subtitle={post.frontmatter.date}>
+    <Layout
+      title={post.frontmatter.title}
+      subtitle={post.frontmatter.date}
+      headerNav={
+        <p className="header-nav">
+          <Link to="/blog">← Back to all posts</Link>
+        </p>
+      }
+    >
       <article>
         <div dangerouslySetInnerHTML={{ __html: post.html }} />
       </article>

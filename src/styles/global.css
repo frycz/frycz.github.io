@@ -124,6 +124,10 @@ header {
   padding-block: calc(var(--base-spacing) * 1.2);
 }
 
+.header-nav {
+  font-size: 12px;
+}
+
 h1 {
   font-size: 1.35rem;
   margin: 0;
