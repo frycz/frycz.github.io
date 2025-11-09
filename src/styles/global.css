@@ -8,7 +8,7 @@
   /* Light (default) */
   --bg: #fafafa; /* near-white */
   --fg: #141618; /* near-black */
-  --muted: #5f6b76;
+  --muted: #3d4851;
   --rule: #dcdfe3;
   --link: #0b64d6;
   --selection-bg: #bcd3ff;
@@ -32,7 +32,7 @@
 :root[data-theme="light"] {
   --bg: #fafafa;
   --fg: #141618;
-  --muted: #5f6b76;
+  --muted: #3d4851;
   --rule: #dcdfe3;
   --link: #0b64d6;
   --selection-bg: #bcd3ff;
