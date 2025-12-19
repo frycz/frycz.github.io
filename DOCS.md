@@ -59,9 +59,9 @@ The site will be available at `http://localhost:8000`
 
 - `npm run develop` - Start development server
 - `npm run build` - Build for production
-- `npm run serve` - Serve production build locally
+- `npm run serve` - Serve production build locally. Build first!!!
 - `npm run clean` - Clean Gatsby cache
-- `npm run deploy` - Build and deploy to GitHub Pages (manual)
+- `npm run deploy` - Build and deploy to GitHub Pages (manual). After pushing to the repo, the page should be published automatically.
 
 ## Deployment to GitHub Pages
 
