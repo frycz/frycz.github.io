@@ -83,8 +83,6 @@ a {
 }
 
 .page {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
   min-height: 100svh;
 }
 
@@ -118,10 +116,6 @@ a {
 a:focus-visible {
   outline: 2px solid var(--link);
   outline-offset: 2px;
-}
-
-header {
-  padding-block: calc(var(--base-spacing) * 1.2);
 }
 
 .header-nav {
@@ -170,7 +164,6 @@ ul.inline {
 }
 
 footer {
-  padding-block: calc(var(--base-spacing) * 1.5);
   border-top: 1px solid var(--rule);
 }
 

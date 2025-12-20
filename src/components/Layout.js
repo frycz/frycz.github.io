@@ -12,6 +12,7 @@ const Layout = ({ children, title, subtitle, headerNav }) => {
         <div className="toggle-row">
           <Link to="/">About</Link>
           <Link to="/blog">Blog</Link>
+          <Link to="/projects">Projects</Link>
           <ThemeToggle />
         </div>
       </div>
