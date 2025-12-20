@@ -3,7 +3,8 @@ import { Link, graphql } from "gatsby";
 import Layout from "../components/Layout";
 
 const IndexPage = ({ data }) => {
-  const projects = data.allMarkdownRemark.edges;
+  const projects = data.projects.edges;
+  const posts = data.posts.edges;
 
   return (
     <Layout>
@@ -50,6 +51,7 @@ const IndexPage = ({ data }) => {
 
       <section aria-labelledby="projects-heading">
         <h2 id="projects-heading">Side projects</h2>
+        <p>I like building things. Here is what I decided to publish.</p>
         <ul className="inline">
           {projects.map(({ node }) => (
             <li key={node.frontmatter.slug}>
@@ -65,8 +67,20 @@ const IndexPage = ({ data }) => {
       <section aria-labelledby="blog-heading">
         <h2 id="blog-heading">Blog</h2>
         <p>
-          I occasionally write about software development, tools, and workflows.{" "}
-          <Link to="/blog">Read my posts →</Link>
+          I occasionally write about software development, tools, and workflows.
+        </p>
+        <ul className="inline">
+          {posts.map(({ node }) => (
+            <li key={node.frontmatter.slug}>
+              <Link to={`/blog/${node.frontmatter.slug}`}>
+                {node.frontmatter.title}
+              </Link>
+              <span className="muted"> — {node.frontmatter.date}</span>
+            </li>
+          ))}
+        </ul>
+        <p>
+          <Link to="/blog">Read all posts →</Link>
         </p>
       </section>
     </Layout>
@@ -84,7 +98,7 @@ export const Head = () => (
 
 export const query = graphql`
   query {
-    allMarkdownRemark(
+    projects: allMarkdownRemark(
       filter: { fileAbsolutePath: { regex: "/content/projects/" } }
       sort: { fields: [frontmatter___date], order: DESC }
     ) {
@@ -94,6 +108,21 @@ export const query = graphql`
             title
             slug
             description
+          }
+        }
+      }
+    }
+    posts: allMarkdownRemark(
+      filter: { fileAbsolutePath: { regex: "/content/blog/" } }
+      sort: { fields: [frontmatter___date], order: DESC }
+      limit: 5
+    ) {
+      edges {
+        node {
+          frontmatter {
+            title
+            slug
+            date(formatString: "MMMM DD, YYYY")
           }
         }
       }
