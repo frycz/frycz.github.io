@@ -8,7 +8,7 @@ const ProjectTemplate = ({ data }) => {
   return (
     <Layout
       title={project.frontmatter.title}
-      subtitle={project.frontmatter.date}
+      date={project.frontmatter.date}
       headerNav={
         <p className="header-nav">
           <Link to="/">← Back to main page</Link>
