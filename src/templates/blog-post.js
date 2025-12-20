@@ -8,7 +8,7 @@ const BlogPostTemplate = ({ data }) => {
   return (
     <Layout
       title={post.frontmatter.title}
-      subtitle={post.frontmatter.date}
+      date={post.frontmatter.date}
       headerNav={
         <p className="header-nav">
           <Link to="/blog">← Back to all posts</Link>

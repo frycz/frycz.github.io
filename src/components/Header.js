@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "gatsby";
 
-const Header = ({ title, subtitle, children }) => {
+const Header = ({ title, subtitle, date, children }) => {
   return (
     <header className="container" role="banner">
       <h1>
@@ -9,7 +9,8 @@ const Header = ({ title, subtitle, children }) => {
           {title}
         </Link>
       </h1>
-      <p className="muted">{subtitle}</p>
+      {subtitle && <p className="muted">{subtitle}</p>}
+      {date && <p className="muted small">{date}</p>}
       {children}
       <hr />
     </header>

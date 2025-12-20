@@ -7,7 +7,7 @@ const IndexPage = ({ data }) => {
   const posts = data.posts.edges;
 
   return (
-    <Layout>
+    <Layout subtitle="Building reliable systems.">
       <section aria-labelledby="about-heading">
         <h2 id="about-heading">About me</h2>
         <p>

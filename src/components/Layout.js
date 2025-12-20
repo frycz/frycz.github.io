@@ -5,21 +5,22 @@ import Header from "./Header";
 import Footer from "./Footer";
 import "../styles/global.css";
 
-const Layout = ({ children, title, subtitle, headerNav }) => {
+const Layout = ({ children, title, subtitle, date, headerNav }) => {
   return (
     <div className="page">
       <div className="topbar container">
         <div className="toggle-row">
           <Link to="/">About</Link>
           <Link to="/blog">Blog</Link>
-          <Link to="/projects">Projects</Link>
+          <Link to="/#projects-heading">Projects</Link>
           <ThemeToggle />
         </div>
       </div>
 
       <Header
         title={title || "Adam Sawicki — Software Engineer"}
-        subtitle={subtitle || "Building reliable systems."}
+        subtitle={subtitle}
+        date={date}
       >
         {headerNav}
       </Header>
