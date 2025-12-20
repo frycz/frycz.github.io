@@ -1,8 +1,10 @@
 import React from "react";
-import { Link } from "gatsby";
+import { Link, graphql } from "gatsby";
 import Layout from "../components/Layout";
 
-const IndexPage = () => {
+const IndexPage = ({ data }) => {
+  const projects = data.allMarkdownRemark.edges;
+
   return (
     <Layout>
       <section aria-labelledby="about-heading">
@@ -49,7 +51,14 @@ const IndexPage = () => {
       <section aria-labelledby="projects-heading">
         <h2 id="projects-heading">Side projects</h2>
         <ul className="inline">
-          <li>[Coming soon].</li>
+          {projects.map(({ node }) => (
+            <li key={node.frontmatter.slug}>
+              <Link to={`/projects/${node.frontmatter.slug}`}>
+                {node.frontmatter.title}
+              </Link>{" "}
+              - {node.frontmatter.description}
+            </li>
+          ))}
         </ul>
       </section>
 
@@ -72,3 +81,22 @@ export const Head = () => (
     <meta name="description" content="Building reliable systems." />
   </>
 );
+
+export const query = graphql`
+  query {
+    allMarkdownRemark(
+      filter: { fileAbsolutePath: { regex: "/content/projects/" } }
+      sort: { fields: [frontmatter___date], order: DESC }
+    ) {
+      edges {
+        node {
+          frontmatter {
+            title
+            slug
+            description
+          }
+        }
+      }
+    }
+  }
+`;

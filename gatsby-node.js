@@ -24,6 +24,11 @@ exports.createPages = async ({ graphql, actions }) => {
             frontmatter {
               slug
             }
+            parent {
+              ... on File {
+                sourceInstanceName
+              }
+            }
           }
         }
       }
@@ -34,15 +39,27 @@ exports.createPages = async ({ graphql, actions }) => {
     throw result.errors;
   }
 
-  const posts = result.data.allMarkdownRemark.edges;
+  const nodes = result.data.allMarkdownRemark.edges;
 
-  posts.forEach(({ node }) => {
-    createPage({
-      path: `/blog/${node.frontmatter.slug}`,
-      component: path.resolve("./src/templates/blog-post.js"),
-      context: {
-        slug: node.frontmatter.slug,
-      },
-    });
+  nodes.forEach(({ node }) => {
+    const sourceInstanceName = node.parent.sourceInstanceName;
+
+    if (sourceInstanceName === "blog") {
+      createPage({
+        path: `/blog/${node.frontmatter.slug}`,
+        component: path.resolve("./src/templates/blog-post.js"),
+        context: {
+          slug: node.frontmatter.slug,
+        },
+      });
+    } else if (sourceInstanceName === "projects") {
+      createPage({
+        path: `/projects/${node.frontmatter.slug}`,
+        component: path.resolve("./src/templates/project.js"),
+        context: {
+          slug: node.frontmatter.slug,
+        },
+      });
+    }
   });
 };
