@@ -1,0 +1,118 @@
+<!DOCTYPE html><html><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="ie=edge"/><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/><meta name="generator" content="Gatsby 4.25.9"/><meta name="description" content="When working on my side projects with LLMs, I noticed a simple pattern that dramatically improved my results. I call it the triangle of success: Me (or any…" data-gatsby-head="true"/><style data-href="/styles.a6c9d60554db8e1d1910.css" data-identity="gatsby-global-css">:root{--font-family:"SF Mono","SFMono-Regular",Menlo,Monaco,Consolas,"Liberation Mono",ui-monospace,"Courier New",monospace;--content-width:800px;--line-height:1.7;--base-spacing:1.25rem;--bg:#fafafa;--fg:#141618;--muted:#3d4851;--rule:#dcdfe3;--link:#0b64d6;--selection-bg:#bcd3ff;--selection-fg:#0a0c0f}@media (prefers-color-scheme:dark){:root{--bg:#0b0c0d;--fg:#e7eaee;--muted:#a3a9b3;--rule:#30343a;--link:#7fb0ff;--selection-bg:#2a3650;--selection-fg:#eef2f7}}:root[data-theme=light]{--bg:#fafafa;--fg:#141618;--muted:#3d4851;--rule:#dcdfe3;--link:#0b64d6;--selection-bg:#bcd3ff;--selection-fg:#0a0c0f}:root[data-theme=dark]{--bg:#0b0c0d;--fg:#e7eaee;--muted:#a3a9b3;--rule:#30343a;--link:#7fb0ff;--selection-bg:#2a3650;--selection-fg:#eef2f7}::selection{background:var(--selection-bg);color:var(--selection-fg)}body,html{height:100%}body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:var(--bg);color:var(--fg);font-family:var(--font-family);line-height:var(--line-height);margin:0;text-rendering:optimizeLegibility;transition:background-color .3s ease,color .3s ease}*,:after,:before{transition:background-color .3s ease,color .3s ease,border-color .3s ease}a{color:var(--link);text-decoration-thickness:.08em;text-underline-offset:.15em}.page{min-height:100svh}.container{margin-inline:auto;width:min(100% - 2rem,var(--content-width))}.topbar{padding-block:calc(var(--base-spacing)*.8)}.toggle-row{align-items:center;display:flex;gap:1rem;justify-content:flex-end}.theme-toggle{background:transparent;border:none;color:inherit;cursor:pointer;font:inherit;padding:0;-webkit-text-decoration:underline dotted;text-decoration:underline dotted}.theme-toggle:focus-visible,a:focus-visible{outline:2px solid var(--link);outline-offset:2px}.header-nav{font-size:12px}h1{font-size:1.35rem;margin:0}h1,h2{letter-spacing:.02em}h2{font-size:1.05rem;margin:calc(var(--base-spacing)*1.25) 0 var(--base-spacing)}li,p{color:var(--fg)}.muted{color:var(--muted)}.small{font-size:.75rem}hr{border:0;border-top:1px solid var(--rule);margin:calc(var(--base-spacing)*1.25) 0}main{padding-bottom:calc(var(--base-spacing)*2)}section+section{margin-top:calc(var(--base-spacing)*1.25)}ul.inline{list-style:square;margin:0;padding-left:1.25rem}footer{border-top:1px solid var(--rule)}.blog-list{list-style:none;padding:0}.blog-list li{border-bottom:1px solid var(--rule);margin-bottom:calc(var(--base-spacing)*1.5);padding-bottom:calc(var(--base-spacing)*1.5)}.blog-list li:last-child{border-bottom:none}.blog-post-title{font-size:1.15rem;margin:0 0 .5rem}.blog-post-meta{font-size:.9rem;margin-bottom:.75rem}.blog-post-excerpt{margin:0}article h1{font-size:1.5rem;margin-bottom:var(--base-spacing)}article h2{font-size:1.2rem}article h3{font-size:1.05rem}article pre{background:var(--rule);border-radius:4px;overflow-x:auto;padding:1rem}article code{background:var(--rule);border-radius:3px;font-family:var(--font-family);font-size:.9em;padding:.2em .4em}article pre code{background:transparent;padding:0}</style><title data-gatsby-head="true">My Triangle of Success - Everything Should Be Text — Adam</title><script src="https://cdn.counter.dev/script.js" data-id="a4bffa24-a702-4959-9a55-3b0242c17b42" data-utcoffset="1" async=""></script></head><body><div id="___gatsby"><div style="outline:none" tabindex="-1" id="gatsby-focus-wrapper"><div class="page"><div class="topbar container"><div class="toggle-row"><a href="/">About</a><a href="/blog">Blog</a><a href="/#projects-heading">Projects</a><button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">Dark mode</button></div></div><header class="container" role="banner"><h1><a style="text-decoration:none;color:inherit" href="/">My Triangle of Success - Everything Should Be Text</a></h1><p class="muted small">September 21, 2025</p><p class="header-nav"><a href="/blog">← Back to all posts</a></p><hr/></header><main id="content" class="container" role="main"><article><div><p>When working on my side projects with LLMs, I noticed a simple pattern that dramatically improved my results. I call it the triangle of success: Me (or any human can go here actually), LLM and text. The idea is straightforward — all these "elements" understand each other and they create a solid, robust construction. Speaking more practically, everything I create should be text-based because text is the language that LLMs understand.</p>
+<pre><code>      [Human]
+       /  \
+      /    \
+     /      \
+ [LLM] ---- [Text]
+</code></pre>
+<hr>
+<h2>The Problem with Traditional Artifacts</h2>
+<p>Software projects produce many artifacts. Specifications, architecture documents, and code are naturally text-based, so they work well with LLMs out of the box. But what about eg.: UI designs, user flow diagrams or system architecture visualizations? These are traditionally graphical, created in tools like Figma, Miro, or Lucidchart.</p>
+<p>Here's the issue: when I hand an LLM a screenshot of my Figma mockup and ask it to implement the UI, the results are inconsistent at best. The model interprets the visual, makes assumptions, and produces something that vaguely resembles what I had in mind. Iterations become painful because each prompt starts from a lossy interpretation of the original design.</p>
+<hr>
+<h2>Text as the Universal Interface</h2>
+<p>My solution for that - convert everything to text. Not just for storage or version control, but specifically because text is the interface through which LLMs understand the world.</p>
+<h3>Low-Fidelity UI as HTML</h3>
+<p>I bet that in every company now there is frenzy of pushing AI to facilitate software development as far as possible. In my team, we faced an issue - Figma designs that we get from the UX team are not really well-understood by LLms (We used Figma MCP). AI was making a lot of assumptions, it had difficulties in identifying correct design system components and the results were imprecise.</p>
+<p>It all made me think - what if the designs were text-based so LLMs know exactly spacing, layouts, colors and components? I played with the idea a bit and the result was a custom HTML-based low-fidelity design tool. Instead of pixel-perfect mockups in Figma, I describe interfaces using simple HTML structures with utility classes. Something like:</p>
+<pre><code class="language-html">&#x3C;div class="card">
+  &#x3C;header class="card-header">
+    &#x3C;h2>User Profile&#x3C;/h2>
+    &#x3C;button class="btn-icon">Edit&#x3C;/button>
+  &#x3C;/header>
+  &#x3C;div class="card-body">
+    &#x3C;img class="avatar avatar-lg" />
+    &#x3C;div class="user-info">
+      &#x3C;span class="user-name">&#x3C;/span>
+      &#x3C;span class="user-email">&#x3C;/span>
+    &#x3C;/div>
+  &#x3C;/div>
+&#x3C;/div>
+</code></pre>
+<p>When I ask an LLM to implement this in React, the result is remarkably close to my intention. There's no interpretation of visual spacing or guessing about component hierarchy — the structure is explicit.</p>
+<p>Going even further with this, once I built a set of commonly used class-based components, I started prompting AI to generate the html itself with UI structure draft:</p>
+<pre><code>LoginPage
+- Stack(centeredVericaly, centeredHorizontally)
+- - AppLogo
+- - EmailInput
+- - PasswordInput
+- - LoginButton
+</code></pre>
+<p>Eventually, the flow became:</p>
+<ul>
+<li>Prompt AI to generate low-fidelity html-based design</li>
+<li>Refine the result</li>
+<li>Ask AI to generate React components from the html spec.</li>
+</ul>
+<p>It works fabulously.</p>
+<h3>User Flows as Mermaid Diagrams</h3>
+<p>Next thing I tried was to "textify" user flow charts. The intention wasn't to make AI write code out of it but rather verify and suggest improvements. It worked nicely. Instead of drawing user flows in a visual tool, I describe them using Mermaid.js. An example user login flow becomes:</p>
+<pre><code class="language-mermaid">flowchart TD
+    A[Landing Page] --> B{User logged in?}
+    B -->|Yes| C[Dashboard]
+    B -->|No| D[Login Form]
+    D --> E{Valid credentials?}
+    E -->|Yes| C
+    E -->|No| F[Show error]
+    F --> D
+</code></pre>
+<p>This is infinitely more useful than a PNG export. I can paste this directly into a prompt and ask the LLM to suggest edge cases I might have missed. The diagram becomes a living specification that the LLM can reason about.</p>
+<h3>Vector Graphics as SVG</h3>
+<p>Yes, graphics can be text-based too. Unlike raster images, SVG files are XML that LLMs understand remarkably well. Here, the results weren't as astonishing as in the previous two examples but I could still profit out of it. LLMs will rather generate very basic SVG shapes that can be also quickly created manually. However, AI understands what a given SVG contains and can combine multiple SVGs into one, eg.: it can compose a more complex graphics out of a house, a tree and a sun.</p>
+<pre><code class="language-xml">&#x3C;svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+  &#x3C;circle cx="12" cy="12" r="10"/>
+  &#x3C;path d="M12 6v6l4 2"/>
+&#x3C;/svg>
+</code></pre>
+<p>I don't use this technique often in my workflow but I think it is still better to keep graphics as SVG rather than raster images or binary. You can always derive other formats from it.</p>
+<h3>Time-Based Content as Code</h3>
+<p>My "textification" continued. Could time-based content like music or animations be represented as text? I googled a bit and it turned out that there were libraries for creating music-as-code and animation-as-code. If that was a thing then I started thinking if time-based series text representation could be generalized</p>
+<p>This led me to draft a general API. The model is built on two primitives:</p>
+<ul>
+<li><strong>Signals</strong> — continuous states that can be started and stopped</li>
+<li><strong>Events</strong> — discrete occurrences that can be fired</li>
+</ul>
+<p>These primitives are interconvertible. A signal with a start and stop becomes an event. A looped event becomes a signal. Both can be composed to create complex temporal structures.</p>
+<p>The composition happens on a timeline in two ways:</p>
+<ul>
+<li><strong>In sequence</strong> — one after another</li>
+<li><strong>In parallel</strong> — at the same time</li>
+</ul>
+<p>Here's what the notation looks like:</p>
+<pre><code class="language-yaml">Signal1.start()
+Event1,
+Event2,
+Signal1.stop()
+[Event3, Event4],  # happen at the same time
+Event5,            # starts when both Event3 and Event4 finish
+
+# Conversions
+Signal1 = Event1.loop()
+Signal2 = [Signal3, Signal4]  # parallel signals
+Event1 = Signal1.duration('3s')
+</code></pre>
+<p>Whether it's a CSS animation, a video edit timeline, or a musical phrase — they all share this underlying structure. A fade-in is a signal. A drum hit is an event. A song is a composition of both, arranged in sequence and parallel on a timeline.</p>
+<p>My experiments are still early, but the results are promising. LLMs can reason about timing, suggest variations, and generate new sequences when the content is represented as text rather than locked in proprietary binary formats.</p>
+<hr>
+<h2>Artifacts Become Assets</h2>
+<p>Here's the key insight: when artifacts are text-based, they stop being static documentation and become reusable assets. Each specification, diagram, or UI skeleton can be fed back into the LLM during future iterations.</p>
+<p>Need to add a password reset flow? The LLM already understands the existing authentication flow from the Mermaid diagram. A new setting page - The LLM can reference the existing component patterns from HTML specifications.</p>
+<p>This creates a compounding effect. The more text-based artifacts are produced, the more context you can provide in future prompts, and the better the LLM performs. Your project documentation becomes a shared language between you and the model.</p>
+<hr>
+<h2>Summary - Practical Tips</h2>
+<p>Here are some key takeaways that you may find useful:</p>
+<ol>
+<li>
+<p><strong>Choose text-first tools.</strong> If a tool doesn't export to a text format that preserves meaning, reconsider using it.</p>
+</li>
+<li>
+<p><strong>Be explicit.</strong> Visual designs rely on implicit conventions. Text specifications should make everything explicit — hierarchy, relationships, states.</p>
+</li>
+<li>
+<p><strong>Version control everything.</strong> Text artifacts belong in your repository alongside code. They evolve together.</p>
+</li>
+<li>
+<p><strong>Reference liberally.</strong> When prompting, include relevant specifications. "Implement the dashboard component following the patterns in the attached HTML specification and the user flow from the Mermaid diagram."</p>
+</li>
+</ol>
+<p>Happy "textifying"!</p></div></article><hr/><nav style="margin-top:2rem"><a href="/blog">← Back to all posts</a></nav></main><footer class="container" role="contentinfo"><div style="display:flex;justify-content:space-between;align-items:center"><p class="muted">© <!-- -->2025<!-- --> Adam Sawicki</p><p class="muted" style="font-size:0.5rem">Build: 2025-12-21 12:33 CET</p></div></footer></div></div><div id="gatsby-announcer" style="position:absolute;top:0;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border:0" aria-live="assertive" aria-atomic="true"></div></div><script id="gatsby-script-loader">/*<![CDATA[*/window.pagePath="/blog/triangle-of-success";window.___webpackCompilationHash="5ccc596f77d69f6e4948";/*]]>*/</script><script id="gatsby-chunk-mapping">/*<![CDATA[*/window.___chunkMapping={"app":["/app-bf55d1b8fcec416c4a68.js"],"component---src-pages-404-js":["/component---src-pages-404-js-97bc7ed2a0fdc5454021.js"],"component---src-pages-blog-js":["/component---src-pages-blog-js-30f1396e5ab22ca1af17.js"],"component---src-pages-index-js":["/component---src-pages-index-js-6e01fa11d168e01f5a14.js"],"component---src-templates-blog-post-js":["/component---src-templates-blog-post-js-142bd7920626b3920972.js"],"component---src-templates-project-js":["/component---src-templates-project-js-83ebf79e92f4845a41d7.js"]};/*]]>*/</script><script src="/app-bf55d1b8fcec416c4a68.js" async=""></script><script src="/framework-db04dae286430fe10d15.js" async=""></script><script src="/webpack-runtime-8410e7fd532abf45cf47.js" async=""></script></body></html>
