@@ -23,3 +23,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+playwright-report/
+test-results/
