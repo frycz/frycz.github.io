@@ -13,6 +13,7 @@ const Layout = ({ children, title, subtitle, date, headerNav }) => {
           <Link to="/">About</Link>
           <Link to="/blog">Blog</Link>
           <Link to="/#projects-heading">Projects</Link>
+          <a href="/rss.xml" title="RSS Feed" className="rss-link">RSS</a>
           <ThemeToggle />
         </div>
       </div>
