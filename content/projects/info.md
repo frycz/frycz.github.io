@@ -11,7 +11,7 @@ NPM: [npmjs.com/package/@frycz/info](https://www.npmjs.com/package/@frycz/info)
 
 Ask questions in natural language and get concise, formatted responses directly in your terminal.
 
-```
+```bash
 info capital of australia
 # canberra
 
