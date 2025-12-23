@@ -54,4 +54,11 @@ describe("Layout", () => {
     render(<Layout>Content</Layout>);
     expect(screen.getByText("Theme Toggle")).toBeInTheDocument();
   });
+
+  it("renders RSS link with correct attributes", () => {
+    render(<Layout>Content</Layout>);
+    const rssLink = screen.getByRole("link", { name: "RSS" });
+    expect(rssLink).toHaveAttribute("href", "/rss.xml");
+    expect(rssLink).toHaveAttribute("title", "RSS Feed");
+  });
 });
