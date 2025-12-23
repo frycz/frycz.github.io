@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Tue, 23 Dec 2025 10:09:00 GMT</lastBuildDate><item><title><![CDATA[atm]]></title><description><![CDATA[Set up private GitHub repos and push commits quickly.]]></description><link>https://frycz.github.io/projects/atm</link><guid isPermaLink="false">https://frycz.github.io/projects/atm</guid><pubDate>Sat, 20 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
+&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/atm&quot;&gt;github.com/frycz/atm&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;NPM: &lt;a href=&quot;https://www.npmjs.com/package/@frycz/atm&quot;&gt;npmjs.com/package/@frycz/atm&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;In the era of AI tools, drafting new ideas is easier than ever. &lt;code&gt;atm&lt;/code&gt; helps you set up private GitHub repos for your ideas and save iterations quickly.&lt;/p&gt;
+&lt;p&gt;With a single &lt;code&gt;atm init&lt;/code&gt; command, the tool prepares a private repository. Develop your project by adding changes and quickly pushing them with &lt;code&gt;atm s&lt;/code&gt;. That&apos;s it.&lt;/p&gt;
+&lt;p&gt;No need to visit github.com to create a private repo and set it up locally. No need for &quot;add&quot; -&gt; &quot;commit&quot; -&gt; &quot;push&quot; repetitive flow.&lt;/p&gt;
+&lt;h2&gt;The Why&lt;/h2&gt;
+&lt;p&gt;I like storing my side projects, even tiny ones, in private git repos. It provides a nice separation and makes the ideas accessible from anywhere.&lt;/p&gt;
+&lt;p&gt;I wasn&apos;t always doing that though. I used to keep code in git repos locally on disks or even without any version control for single-file ideas. Time passed. Moving repos from one disk to another got tedious and single-file ideas became complex codebases. Then, I promised to myself that everything I create would go to GitHub.&lt;/p&gt;
+&lt;p&gt;With all the AI models and tools around, I started creating more repos than usual. Going to GitHub to add yet another one started feeling repetitive, so I created a short script that used &lt;code&gt;gc&lt;/code&gt; to setup a repo for me. Later, I added an alias to my terminal to quickly stage all local changes, commit them and push to GitHub.&lt;/p&gt;
+&lt;p&gt;I have been using these two tools for a few months and I really like them. Following my new year resolution for 2025 to publish more stuff that I create, I decided to combine these two commands into a one and publish it.&lt;/p&gt;
+&lt;p&gt;Feel free to try it and give some feedback. Enjoy!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[My Triangle of Success - Everything Should Be Text]]></title><link>https://frycz.github.io/blog/triangle-of-success</link><guid isPermaLink="false">https://frycz.github.io/blog/triangle-of-success</guid><pubDate>Sun, 21 Sep 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;When working on my side projects with LLMs, I noticed a simple pattern that dramatically improved my results. I call it the triangle of success: Me (or any human can go here actually), LLM and text. The idea is straightforward — all these &quot;elements&quot; understand each other and they create a solid, robust construction. Speaking more practically, everything I create should be text-based because text is the language that LLMs understand.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;      [Human]
+       /  \
+      /    \
+     /      \
+ [LLM] ---- [Text]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;hr&gt;
+&lt;h2&gt;The Problem with Traditional Artifacts&lt;/h2&gt;
+&lt;p&gt;Software projects produce many artifacts. Specifications, architecture documents, and code are naturally text-based, so they work well with LLMs out of the box. But what about eg.: UI designs, user flow diagrams or system architecture visualizations? These are traditionally graphical, created in tools like Figma, Miro, or Lucidchart.&lt;/p&gt;
+&lt;p&gt;Here&apos;s the issue: when I hand an LLM a screenshot of my Figma mockup and ask it to implement the UI, the results are inconsistent at best. The model interprets the visual, makes assumptions, and produces something that vaguely resembles what I had in mind. Iterations become painful because each prompt starts from a lossy interpretation of the original design.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Text as the Universal Interface&lt;/h2&gt;
+&lt;p&gt;My solution for that - convert everything to text. Not just for storage or version control, but specifically because text is the interface through which LLMs understand the world.&lt;/p&gt;
+&lt;h3&gt;Low-Fidelity UI as HTML&lt;/h3&gt;
+&lt;p&gt;I bet that in every company now there is frenzy of pushing AI to facilitate software development as far as possible. In my team, we faced an issue - Figma designs that we get from the UX team are not really well-understood by LLms (We used Figma MCP). AI was making a lot of assumptions, it had difficulties in identifying correct design system components and the results were imprecise.&lt;/p&gt;
+&lt;p&gt;It all made me think - what if the designs were text-based so LLMs know exactly spacing, layouts, colors and components? I played with the idea a bit and the result was a custom HTML-based low-fidelity design tool. Instead of pixel-perfect mockups in Figma, I describe interfaces using simple HTML structures with utility classes. Something like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;&amp;#x3C;div class=&quot;card&quot;&gt;
+  &amp;#x3C;header class=&quot;card-header&quot;&gt;
+    &amp;#x3C;h2&gt;User Profile&amp;#x3C;/h2&gt;
+    &amp;#x3C;button class=&quot;btn-icon&quot;&gt;Edit&amp;#x3C;/button&gt;
+  &amp;#x3C;/header&gt;
+  &amp;#x3C;div class=&quot;card-body&quot;&gt;
+    &amp;#x3C;img class=&quot;avatar avatar-lg&quot; /&gt;
+    &amp;#x3C;div class=&quot;user-info&quot;&gt;
+      &amp;#x3C;span class=&quot;user-name&quot;&gt;&amp;#x3C;/span&gt;
+      &amp;#x3C;span class=&quot;user-email&quot;&gt;&amp;#x3C;/span&gt;
+    &amp;#x3C;/div&gt;
+  &amp;#x3C;/div&gt;
+&amp;#x3C;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;When I ask an LLM to implement this in React, the result is remarkably close to my intention. There&apos;s no interpretation of visual spacing or guessing about component hierarchy — the structure is explicit.&lt;/p&gt;
+&lt;p&gt;Going even further with this, once I built a set of commonly used class-based components, I started prompting AI to generate the html itself with UI structure draft:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;LoginPage
+- Stack(centeredVericaly, centeredHorizontally)
+- - AppLogo
+- - EmailInput
+- - PasswordInput
+- - LoginButton
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Eventually, the flow became:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Prompt AI to generate low-fidelity html-based design&lt;/li&gt;
+&lt;li&gt;Refine the result&lt;/li&gt;
+&lt;li&gt;Ask AI to generate React components from the html spec.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It works fabulously.&lt;/p&gt;
+&lt;h3&gt;User Flows as Mermaid Diagrams&lt;/h3&gt;
+&lt;p&gt;Next thing I tried was to &quot;textify&quot; user flow charts. The intention wasn&apos;t to make AI write code out of it but rather verify and suggest improvements. It worked nicely. Instead of drawing user flows in a visual tool, I describe them using Mermaid.js. An example user login flow becomes:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;flowchart TD
+    A[Landing Page] --&gt; B{User logged in?}
+    B --&gt;|Yes| C[Dashboard]
+    B --&gt;|No| D[Login Form]
+    D --&gt; E{Valid credentials?}
+    E --&gt;|Yes| C
+    E --&gt;|No| F[Show error]
+    F --&gt; D
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This is infinitely more useful than a PNG export. I can paste this directly into a prompt and ask the LLM to suggest edge cases I might have missed. The diagram becomes a living specification that the LLM can reason about.&lt;/p&gt;
+&lt;h3&gt;Vector Graphics as SVG&lt;/h3&gt;
+&lt;p&gt;Yes, graphics can be text-based too. Unlike raster images, SVG files are XML that LLMs understand remarkably well. Here, the results weren&apos;t as astonishing as in the previous two examples but I could still profit out of it. LLMs will rather generate very basic SVG shapes that can be also quickly created manually. However, AI understands what a given SVG contains and can combine multiple SVGs into one, eg.: it can compose a more complex graphics out of a house, a tree and a sun.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;#x3C;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#3b82f6&quot; stroke-width=&quot;2&quot;&gt;
+  &amp;#x3C;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;10&quot;/&gt;
+  &amp;#x3C;path d=&quot;M12 6v6l4 2&quot;/&gt;
+&amp;#x3C;/svg&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I don&apos;t use this technique often in my workflow but I think it is still better to keep graphics as SVG rather than raster images or binary. You can always derive other formats from it.&lt;/p&gt;
+&lt;h3&gt;Time-Based Content as Code&lt;/h3&gt;
+&lt;p&gt;My &quot;textification&quot; continued. Could time-based content like music or animations be represented as text? I googled a bit and it turned out that there were libraries for creating music-as-code and animation-as-code. If that was a thing then I started thinking if time-based series text representation could be generalized&lt;/p&gt;
+&lt;p&gt;This led me to draft a general API. The model is built on two primitives:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Signals&lt;/strong&gt; — continuous states that can be started and stopped&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Events&lt;/strong&gt; — discrete occurrences that can be fired&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These primitives are interconvertible. A signal with a start and stop becomes an event. A looped event becomes a signal. Both can be composed to create complex temporal structures.&lt;/p&gt;
+&lt;p&gt;The composition happens on a timeline in two ways:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;In sequence&lt;/strong&gt; — one after another&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;In parallel&lt;/strong&gt; — at the same time&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Here&apos;s what the notation looks like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;Signal1.start()
+Event1,
+Event2,
+Signal1.stop()
+[Event3, Event4],  # happen at the same time
+Event5,            # starts when both Event3 and Event4 finish
+
+# Conversions
+Signal1 = Event1.loop()
+Signal2 = [Signal3, Signal4]  # parallel signals
+Event1 = Signal1.duration(&apos;3s&apos;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Whether it&apos;s a CSS animation, a video edit timeline, or a musical phrase — they all share this underlying structure. A fade-in is a signal. A drum hit is an event. A song is a composition of both, arranged in sequence and parallel on a timeline.&lt;/p&gt;
+&lt;p&gt;My experiments are still early, but the results are promising. LLMs can reason about timing, suggest variations, and generate new sequences when the content is represented as text rather than locked in proprietary binary formats.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Artifacts Become Assets&lt;/h2&gt;
+&lt;p&gt;Here&apos;s the key insight: when artifacts are text-based, they stop being static documentation and become reusable assets. Each specification, diagram, or UI skeleton can be fed back into the LLM during future iterations.&lt;/p&gt;
+&lt;p&gt;Need to add a password reset flow? The LLM already understands the existing authentication flow from the Mermaid diagram. A new setting page - The LLM can reference the existing component patterns from HTML specifications.&lt;/p&gt;
+&lt;p&gt;This creates a compounding effect. The more text-based artifacts are produced, the more context you can provide in future prompts, and the better the LLM performs. Your project documentation becomes a shared language between you and the model.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Summary - Practical Tips&lt;/h2&gt;
+&lt;p&gt;Here are some key takeaways that you may find useful:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Choose text-first tools.&lt;/strong&gt; If a tool doesn&apos;t export to a text format that preserves meaning, reconsider using it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Be explicit.&lt;/strong&gt; Visual designs rely on implicit conventions. Text specifications should make everything explicit — hierarchy, relationships, states.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Version control everything.&lt;/strong&gt; Text artifacts belong in your repository alongside code. They evolve together.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Reference liberally.&lt;/strong&gt; When prompting, include relevant specifications. &quot;Implement the dashboard component following the patterns in the attached HTML specification and the user flow from the Mermaid diagram.&quot;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Happy &quot;textifying&quot;!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Vibe-Coding Is Awesome]]></title><link>https://frycz.github.io/blog/vibe-conding-is-awesome</link><guid isPermaLink="false">https://frycz.github.io/blog/vibe-conding-is-awesome</guid><pubDate>Sat, 12 Jul 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I know — professional software engineers look at this title with contempt. It has been proven multiple times already that the quality and overall value of vibe-coded solutions is at least questionable, not to mention that deploying a half-baked app to production can cause more damage than actual profits.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;It Is Not a Magic Wand&lt;/h2&gt;
+&lt;p&gt;Let’s quickly review the most common concerns raised by the industry. Then I will tell you how I use vibe-coding and why I think this technique brings value.&lt;/p&gt;
+&lt;h3&gt;Code Is Messy&lt;/h3&gt;
+&lt;p&gt;First of all, AI-generated code can be messy, poorly structured, and hard to maintain or scale long-term. The codebase becomes unmaintainable very quickly. At some point, it is better to start from scratch rather than keep prompting over and over again to add one more feature to your “product.”&lt;/p&gt;
+&lt;h3&gt;Debugging Is Hard&lt;/h3&gt;
+&lt;p&gt;Vibe-coded software is almost never reviewed, or it is reviewed superficially. That’s an invitation for hidden bugs, security vulnerabilities, or inefficient logic. The bigger the codebase, the harder it is for an LLM to find a mistake and generate a reasonable fix without breaking anything else. At some point, eventually, you need to look at the source code, read, and understand it. The vibe-coding adventure hits a dead end.&lt;/p&gt;
+&lt;h3&gt;Less Critical Thinking&lt;/h3&gt;
+&lt;p&gt;An experienced vibe-coder can apply more advanced techniques like per-prompt code reviews, manual refinements of LLM outputs, and more careful reviews of bigger chunks of changes. With this approach, we can get quite satisfying results, and maybe even deliver a small feature or a tiny product. Everything would be good if we weren’t lazy by nature. In every answer that the LLM provides, it introduces some assumptions that we accept, because why not? It looks like a good idea. We stop thinking deeply about the problem we are solving and start relying on the LLM more and more to think for us. This is dangerous because our problem-solving skills are slowly degrading.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Why Is It Awesome Then?&lt;/h2&gt;
+&lt;p&gt;How can vibe-coding be awesome, you may ask? Well, despite all that we discussed, I still see a huge potential in this approach.&lt;/p&gt;
+&lt;h3&gt;Ideas Validation Becomes Cheap&lt;/h3&gt;
+&lt;p&gt;I remember my beginning of using ChatGPT. When I realised it can write working software, I started flooding it with ridiculous prompts like “Create an e-commerce platform like Amazon,” or “Build a clone of Figma,” etc. My goal wasn’t to actually build a competition for these companies but rather to see where the limits for ChatGPT were. At one point, I realised that the LLM (gpt-3.5 back then) was an excellent tool for enabling experimentation. With a single prompt (or a few), I could implement an idea that would cost me an entire Saturday afternoon if coded manually.&lt;/p&gt;
+&lt;h3&gt;My First Experiment&lt;/h3&gt;
+&lt;p&gt;My first experiment with a well-defined goal was to train a simple neural network for image recognition. At the university, I learned how neural networks work, but I never really had time to play with more advanced examples. After a single prompt, ChatGPT generated a step-by-step guide on what libraries to install, how to download the model, and where to get a good training dataset from. I had some tiny issues along the way, but the LLM helped me to solve them. At the end, I ran the script, and the test image was correctly classified. Was the code production-ready? Absolutely not. Was it fun? Yes! It all took me 20 minutes.&lt;/p&gt;
+&lt;h3&gt;Exploration Is Easy&lt;/h3&gt;
+&lt;p&gt;It hit me. I was able to build an image classifier prototype without any past experience with machine learning tools. I knew the theoretical basics but nothing more than that. The vibe-coding technique is enough to lower the entry barriers for new areas. I am not saying that I could call myself a machine learning engineer, but exploring a new field has never been easier. That day I also vibe-coded some C++ and Arduino projects, just to bring back memories of good, old college days.&lt;/p&gt;
+&lt;h3&gt;No More Boring Stuff&lt;/h3&gt;
+&lt;p&gt;Trying out new things and learning is fun; doing the same thing over and over again is not. I am not able to count how many times I wanted to try a new Python or Node.js library in a bit more complex environment than a single-file script, but I resigned because setting up a proper project template was taking too much time. I don’t have this issue anymore. Testing Stripe integration? No problem. An LLM can help with setting up a full-stack app with the necessary services and a user interface.&lt;/p&gt;
+&lt;h2&gt;Final Words&lt;/h2&gt;
+&lt;p&gt;We have context management, spec-driven development, and agent frameworks nowadays. Despite that, quick prompting without prior planning isn’t dead. It rather complements more advanced techniques and can still provide value in many cases when used wisely. Happy vibe-coding!&lt;/p&gt;</content:encoded></item></channel></rss>
