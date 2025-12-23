@@ -1,4 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Tue, 23 Dec 2025 11:19:54 GMT</lastBuildDate><item><title><![CDATA[atm]]></title><description><![CDATA[Set up private GitHub repos and push commits quickly.]]></description><link>https://frycz.github.io/projects/atm</link><guid isPermaLink="false">https://frycz.github.io/projects/atm</guid><pubDate>Sat, 20 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Tue, 23 Dec 2025 13:03:02 GMT</lastBuildDate><item><title><![CDATA[info]]></title><description><![CDATA[Ask questions in natural language and get concise, formatted responses directly in your terminal.]]></description><link>https://frycz.github.io/projects/info</link><guid isPermaLink="false">https://frycz.github.io/projects/info</guid><pubDate>Tue, 23 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/info&quot;&gt;github.com/frycz/info&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;NPM: &lt;a href=&quot;https://www.npmjs.com/package/@frycz/info&quot;&gt;npmjs.com/package/@frycz/info&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Ask questions in natural language and get concise, formatted responses directly in your terminal.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;info capital of australia
+# canberra
+
+info mass of the sun in kg
+# 1.989e30
+
+info how to init python venv
+# python -m venv venv
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I like working with the terminal but I am bad at memorizing commands - I forget the ones that I don&apos;t use often. My previous techniques to improve the workflow were:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;reading command help,&lt;/li&gt;
+&lt;li&gt;maintaining a list of useful snippets,&lt;/li&gt;
+&lt;li&gt;asking AI to generate them on demand.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It all worked fine, but I noticed that I preferred to use the syntax that I already know, even though I knew there was a better way to do it. Why would I try to compose &lt;code&gt;git log --oneline --graph --decorate&lt;/code&gt; if &lt;code&gt;git log&lt;/code&gt; just works? Reading manuals was taking time, my commands cheat sheet needed constant updates, and AI was generating answers that were way too verbose.&lt;/p&gt;
+&lt;p&gt;One day, I wrote a very detailed prompt so that an LLM outputs the essence, the raw answer to my question. I liked the result so I kept refining it. Eventually, I created a bash script and added a CLI alias to speed up my lookups. The result was very satisfying - I could type &lt;code&gt;iinfo how to check what is on 9000 port&lt;/code&gt; into the terminal to get the &lt;code&gt;lsof -i :9000&lt;/code&gt; answer. No unnecessary comments, no formatting. The output is ready to be copied and executed.&lt;/p&gt;
+&lt;p&gt;I wrapped the script into a standalone CLI tool and published it on the NPM registry. Enjoy!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[atm]]></title><description><![CDATA[Set up private GitHub repos and push commits quickly.]]></description><link>https://frycz.github.io/projects/atm</link><guid isPermaLink="false">https://frycz.github.io/projects/atm</guid><pubDate>Sat, 20 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
 &lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/atm&quot;&gt;github.com/frycz/atm&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;NPM: &lt;a href=&quot;https://www.npmjs.com/package/@frycz/atm&quot;&gt;npmjs.com/package/@frycz/atm&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;In the era of AI tools, drafting new ideas is easier than ever. &lt;code&gt;atm&lt;/code&gt; helps you set up private GitHub repos for your ideas and save iterations quickly.&lt;/p&gt;
