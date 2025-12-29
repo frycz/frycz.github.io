@@ -4,7 +4,7 @@ date: "2019-02-21"
 slug: "composition-is-the-key"
 ---
 
-I keep an "idea box" where I put thoughts that come to mind when I am bored enough. Recently, I wanted to add one more, but before I did so, I had started reading existing entries. To my surprise, the thought I wanted to write down was already there... twice.
+I keep an "idea box" where I put thoughts that come to my mind when I am bored enough. Recently, I wanted to add one more, but before I did so, I had started reading existing entries. To my surprise, the thought I wanted to write down was already there... twice.
 
 The idea was: "Composition is the key".
 
