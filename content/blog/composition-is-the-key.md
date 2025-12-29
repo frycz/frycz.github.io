@@ -53,4 +53,4 @@ Seeing everything as composable structures helps me understand complex problems 
 - Is it easy to understand by other devs?
 - Will it work nicely with the code added in the future?
 
-Getting answers to these questions becomes clear if I look at composition as the ultimate goal. I know that selling a vibecoded SaaS and becoming a billionaire is the actual goal, but you get the idea.
+Getting answers to these questions becomes clear if I look at composition as the ultimate goal. I know that selling a SaaS and becoming a billionaire is the actual goal, but you get the idea.
