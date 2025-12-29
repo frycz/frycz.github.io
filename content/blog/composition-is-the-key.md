@@ -28,7 +28,7 @@ Our world is composed of basic building blocks that interact with each other. St
 
 ---
 
-## Composition in software
+## Composition in Software
 
 Software is no different. It is perhaps less tangible than PC hardware but all in all, making software composable gives the benefits listed in the examples above:
 - different parts can be developed and tested independently,
@@ -43,7 +43,7 @@ Examples are: adapter, facade, mediator, observer/pub-sub, chain of responsibili
 
 ---
 
-## Finally I got it
+## Finally I Got It
 
 It just took me some time to understand that composition is not a software-specific thing. It is how our world is built.
 
