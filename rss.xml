@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Tue, 23 Dec 2025 13:07:58 GMT</lastBuildDate><item><title><![CDATA[info]]></title><description><![CDATA[Ask questions in natural language and get concise, formatted responses directly in your terminal.]]></description><link>https://frycz.github.io/projects/info</link><guid isPermaLink="false">https://frycz.github.io/projects/info</guid><pubDate>Tue, 23 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/info&quot;&gt;github.com/frycz/info&lt;/a&gt;&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Mon, 29 Dec 2025 14:29:20 GMT</lastBuildDate><item><title><![CDATA[info]]></title><description><![CDATA[Ask questions in natural language and get concise, formatted responses directly in your terminal.]]></description><link>https://frycz.github.io/projects/info</link><guid isPermaLink="false">https://frycz.github.io/projects/info</guid><pubDate>Tue, 23 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/info&quot;&gt;github.com/frycz/info&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;NPM: &lt;a href=&quot;https://www.npmjs.com/package/@frycz/info&quot;&gt;npmjs.com/package/@frycz/info&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Ask questions in natural language and get concise, formatted responses directly in your terminal.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;info capital of australia
@@ -175,4 +175,36 @@ Event1 = Signal1.duration(&apos;3s&apos;)
 &lt;p&gt;I got my first job in software development in 2013 - single page applications were getting more and more popular in favour of traditional, server-rendered ones. Angular was one of the few choices to create a production-grade app and React wasn&apos;t a thing yet.&lt;/p&gt;
 &lt;p&gt;I remember that creating an app with pure JS was a nightmare and Angular made at least some of the pains go away. It allowed for creating more structured, complex architectures. While applications grew, soon, Angular&apos;s pain points grew as well. Bi-directional state sync and performance issues were the most common ones.&lt;/p&gt;
 &lt;p&gt;Multiple other frameworks were created to solve the issues. A day without a new JS framework was a lost one. Among all these solutions, one in particular started getting popular - React.js.&lt;/p&gt;
-&lt;p&gt;I was skeptical at first, how could I know if something better wouldn&apos;t be created the next day? Eventually, I decided to try it but I didn&apos;t want to build yet another todo app. That&apos;s why I built yet another notes app.&lt;/p&gt;</content:encoded></item></channel></rss>
+&lt;p&gt;I was skeptical at first, how could I know if something better wouldn&apos;t be created the next day? Eventually, I decided to try it but I didn&apos;t want to build yet another todo app. That&apos;s why I built yet another notes app.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[Composition Is the Key]]></title><link>https://frycz.github.io/blog/composition-is-the-key</link><guid isPermaLink="false">https://frycz.github.io/blog/composition-is-the-key</guid><pubDate>Thu, 21 Feb 2019 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;I keep an &quot;idea box&quot; where I put thoughts that come to my mind when I am bored enough. Recently, I wanted to add one more, but before I did so, I had started reading existing entries. To my surprise, the thought I wanted to write down was already there... twice.&lt;/p&gt;
+&lt;p&gt;The idea was: &quot;Composition is the key&quot;.&lt;/p&gt;
+&lt;p&gt;The more I think about composition, the more I notice it, almost everywhere now. Here are some brief examples of what I mean.&lt;/p&gt;
+&lt;h3&gt;Music&lt;/h3&gt;
+&lt;p&gt;Songs are composed of elements like bassline, hi-hats, melody, etc. Modifying some of these can result in a completely different song - no need to create a new one from scratch.&lt;/p&gt;
+&lt;h3&gt;Storytelling&lt;/h3&gt;
+&lt;p&gt;Stories are composed of characters and environments. Storylines emerge when the characters interact with each other in given environments. Replacing or modifying a character can move a story in a new direction.&lt;/p&gt;
+&lt;h3&gt;Electronics (both digital and analog)&lt;/h3&gt;
+&lt;p&gt;This is my favorite example. There are electronic components with well-defined interfaces and communication standards. Thanks to that, we can create complex devices - a single person can build a PC with abstractions that were carefully designed, manufactured and tested before. Modifications and extensions of an existing PC are easy because of its modularity.&lt;/p&gt;
+&lt;h3&gt;Chemistry and Biology&lt;/h3&gt;
+&lt;p&gt;Our world is composed of basic building blocks that interact with each other. Starting from the Standard Model (still a theory though), we go through atoms and fundamental forces to more and more complex organisms - including us, humans. Yes - modifications and extensions of our bodies are possible to some extent.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Composition in software&lt;/h2&gt;
+&lt;p&gt;Software is no different. It is perhaps less tangible than PC hardware but all in all, making software composable gives the benefits listed in the examples above:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;different parts can be developed and tested independently,&lt;/li&gt;
+&lt;li&gt;components can be replaced or reused,&lt;/li&gt;
+&lt;li&gt;composition allows for creating complex systems with easy-to-understand abstractions.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I am not saying anything new here. &quot;Favor composition over inheritance&quot; is a fundamental principle in object-oriented programming and a &quot;component&quot; or a &quot;composite&quot; is an actual design pattern described in the &quot;Design Patterns: Elements of Reusable Object-Oriented Software&quot; book.&lt;/p&gt;
+&lt;p&gt;All other design patterns described in the book exist to make software building blocks actually composable. What&apos;s interesting is that inspiration for these patterns came from the physical world, where composition already works.&lt;/p&gt;
+&lt;p&gt;Examples are: adapter, facade, mediator, observer/pub-sub, chain of responsibility, decorator, factory, builder, etc.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;Finally I got it&lt;/h2&gt;
+&lt;p&gt;It just took me some time to understand that composition is not a software-specific thing. It is how our world is built.&lt;/p&gt;
+&lt;p&gt;Seeing everything as composable structures helps me understand complex problems and makes decision-making easier. When I look at a problem, I ask myself:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Can this piece of code be easily replaced with other modules without breaking the app?&lt;/li&gt;
+&lt;li&gt;Can it be reused in other apps?&lt;/li&gt;
+&lt;li&gt;Is it easy to understand by other devs?&lt;/li&gt;
+&lt;li&gt;Will it work nicely with the code added in the future?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Getting answers to these questions becomes clear if I look at composition as the ultimate goal. I know that selling a vibecoded SaaS and becoming a billionaire is the actual goal, but you get the idea.&lt;/p&gt;</content:encoded></item></channel></rss>
