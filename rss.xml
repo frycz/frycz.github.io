@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Mon, 29 Dec 2025 14:29:20 GMT</lastBuildDate><item><title><![CDATA[info]]></title><description><![CDATA[Ask questions in natural language and get concise, formatted responses directly in your terminal.]]></description><link>https://frycz.github.io/projects/info</link><guid isPermaLink="false">https://frycz.github.io/projects/info</guid><pubDate>Tue, 23 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/info&quot;&gt;github.com/frycz/info&lt;/a&gt;&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Mon, 29 Dec 2025 21:53:05 GMT</lastBuildDate><item><title><![CDATA[info]]></title><description><![CDATA[Ask questions in natural language and get concise, formatted responses directly in your terminal.]]></description><link>https://frycz.github.io/projects/info</link><guid isPermaLink="false">https://frycz.github.io/projects/info</guid><pubDate>Tue, 23 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Repo: &lt;a href=&quot;https://github.com/frycz/info&quot;&gt;github.com/frycz/info&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;NPM: &lt;a href=&quot;https://www.npmjs.com/package/@frycz/info&quot;&gt;npmjs.com/package/@frycz/info&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Ask questions in natural language and get concise, formatted responses directly in your terminal.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;info capital of australia
@@ -187,7 +187,7 @@ Event1 = Signal1.duration(&apos;3s&apos;)
 &lt;h3&gt;Chemistry and Biology&lt;/h3&gt;
 &lt;p&gt;Our world is composed of basic building blocks that interact with each other. Starting from the Standard Model (still a theory though), we go through atoms and fundamental forces to more and more complex organisms - including us, humans. Yes - modifications and extensions of our bodies are possible to some extent.&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2&gt;Composition in software&lt;/h2&gt;
+&lt;h2&gt;Composition in Software&lt;/h2&gt;
 &lt;p&gt;Software is no different. It is perhaps less tangible than PC hardware but all in all, making software composable gives the benefits listed in the examples above:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;different parts can be developed and tested independently,&lt;/li&gt;
@@ -198,7 +198,7 @@ Event1 = Signal1.duration(&apos;3s&apos;)
 &lt;p&gt;All other design patterns described in the book exist to make software building blocks actually composable. What&apos;s interesting is that inspiration for these patterns came from the physical world, where composition already works.&lt;/p&gt;
 &lt;p&gt;Examples are: adapter, facade, mediator, observer/pub-sub, chain of responsibility, decorator, factory, builder, etc.&lt;/p&gt;
 &lt;hr&gt;
-&lt;h2&gt;Finally I got it&lt;/h2&gt;
+&lt;h2&gt;Finally I Got It&lt;/h2&gt;
 &lt;p&gt;It just took me some time to understand that composition is not a software-specific thing. It is how our world is built.&lt;/p&gt;
 &lt;p&gt;Seeing everything as composable structures helps me understand complex problems and makes decision-making easier. When I look at a problem, I ask myself:&lt;/p&gt;
 &lt;ul&gt;
