@@ -11,29 +11,34 @@ const IndexPage = ({ data }) => {
       <section aria-labelledby="about-heading">
         <h2 id="about-heading">About me</h2>
         <p>
-          I am a software engineer with over 12 years of professional
+          I am a software engineer with over 13 years of professional
           experience. During that time, I worked on a variety of web-oriented
           projects with different architectures, approaches and technologies.
           Examples are: medical software, e-commerce platforms, ETL pipelines
           and more. Thanks to that, I got a solid understanding of web
           development challenges and I feel comfortable working across the full
-          application stack - both front-end and back-end.
+          application stack - both front-end and back-end. I have also written C
+          and C++, so I am no stranger to low-level memory management and
+          optimization.
         </p>
         <p>
-          My role goes beyond writing code. In my current project (an ETL
-          pipeline) I participate in designing and implementing technical
-          strategies, I lead engineering teams during features implementation,
-          and actively mentor other developers, helping them grow and improve
-          their technical skills.
+          In my current project (an ETL pipeline) I design and implement
+          technical strategies, lead engineering teams through feature delivery,
+          and mentor developers as they grow. I lead those teams AI-first —
+          coding agents do a large share of the implementation, and my job is
+          knowing where they don't hold up. We still own the architecture, data
+          correctness, and the review that catches what the model got
+          confidently wrong. Working this way buys time back, and we spend it on
+          performance optimization and security.
         </p>
         <p>
-          I believe in the AI revolution and I actively integrate AI tools
-          (Claude Code, CursorAI, Gemini, and more) into my daily workflow - it
-          boosts my productivity and helps me experiment with new solutions.
-        </p>
-        <p>
-          In my free time, I like trying new tools, libraries and ideas. I ride
-          a bike, workout at the gym, hike, and enjoy drip coffee.
+          In my free time I experiment with AI by building small tools and apps,
+          watching where coding agents really break and working out what
+          actually makes them reliable. The pet project I am proudest of is{" "}
+          <a href="https://www.geotraders.app">GeoTraders</a> — a GPS-based
+          mobile app I built and still maintain, where people send
+          “treasures” on tour and follow them as they travel. I also
+          ride a bike, workout at the gym, hike, and enjoy drip coffee.
         </p>
       </section>
 
