@@ -1,6 +1,6 @@
 ---
 title: "paxx"
-date: "2026-09-05"
+date: "2026-01-29"
 slug: "paxx"
 description: "Scaffold a production-ready FastAPI project you fully own."
 ---
