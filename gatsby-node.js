@@ -13,6 +13,18 @@ exports.onCreateWebpackConfig = ({ actions }) => {
   });
 };
 
+exports.onCreateDevServer = ({ store }) => {
+  const { program } = store.getState();
+  const protocol = program.ssl ? "https" : "http";
+  const host = program.host === "0.0.0.0" ? "localhost" : program.host;
+  const url = `${protocol}://${host}:${program.port}`;
+
+  console.log("");
+  console.log(`  Site is running at:   ${url}`);
+  console.log(`  GraphiQL explorer at: ${url}/___graphql`);
+  console.log("");
+};
+
 exports.createPages = async ({ graphql, actions }) => {
   const { createPage } = actions;
 

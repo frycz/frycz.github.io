@@ -1,5 +1,7 @@
 import React from "react";
 
+/* global __BUILD_DATE__ */
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const buildDate = typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : "";
