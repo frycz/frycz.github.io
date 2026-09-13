@@ -1,0 +1,13 @@
+diff --git a/node_modules/gatsby/cache-dir/navigation.js b/node_modules/gatsby/cache-dir/navigation.js
+index 9bf8fbb..ef2335f 100644
+--- a/node_modules/gatsby/cache-dir/navigation.js
++++ b/node_modules/gatsby/cache-dir/navigation.js
+@@ -118,6 +118,8 @@ const navigate = (to, options = {}) => {
+         }
+ 
+         window.location = pathname + search + hash
++        clearTimeout(timeoutId)
++        return
+       }
+     }
+     reachNavigate(to, options)
