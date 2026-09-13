@@ -4,7 +4,7 @@
   "description": "Adam's portfolio and blog built with Gatsby",
   "private": true,
   "scripts": {
-    "develop": "gatsby develop",
+    "dev": "gatsby develop",
     "start": "gatsby develop",
     "build": "gatsby build",
     "serve": "gatsby serve",
