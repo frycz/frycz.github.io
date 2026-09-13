@@ -11,7 +11,7 @@ const ProjectTemplate = ({ data }) => {
       date={project.frontmatter.date}
       headerNav={
         <p className="header-nav">
-          <Link to="/">← Back to main page</Link>
+          <Link to="/projects">← Back to all projects</Link>
         </p>
       }
     >
@@ -22,7 +22,7 @@ const ProjectTemplate = ({ data }) => {
       <hr />
 
       <nav style={{ marginTop: "2rem" }}>
-        <Link to="/">← Back to main page</Link>
+        <Link to="/projects">← Back to all projects</Link>
       </nav>
     </Layout>
   );

@@ -55,7 +55,7 @@ const IndexPage = ({ data }) => {
       </section>
 
       <section aria-labelledby="projects-heading">
-        <h2 id="projects-heading">Side projects</h2>
+        <h2 id="projects-heading">Projects</h2>
         <p>I like building things. Here is what I decided to publish.</p>
         <ul className="inline">
           {projects.map(({ node }) => (
@@ -67,6 +67,9 @@ const IndexPage = ({ data }) => {
             </li>
           ))}
         </ul>
+        <p>
+          <Link to="/projects">See all projects →</Link>
+        </p>
       </section>
 
       <section aria-labelledby="blog-heading">
@@ -106,6 +109,7 @@ export const query = graphql`
     projects: allMarkdownRemark(
       filter: { fileAbsolutePath: { regex: "/content/projects/" } }
       sort: { fields: [frontmatter___date], order: DESC }
+      limit: 5
     ) {
       edges {
         node {

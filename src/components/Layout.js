@@ -12,7 +12,7 @@ const Layout = ({ children, title, subtitle, date, headerNav }) => {
         <div className="toggle-row">
           <Link to="/">About</Link>
           <Link to="/blog">Blog</Link>
-          <Link to="/#projects-heading">Projects</Link>
+          <Link to="/projects">Projects</Link>
           <a href="/rss.xml" title="RSS Feed" className="rss-link">RSS</a>
           <ThemeToggle />
         </div>

@@ -30,7 +30,7 @@ describe("Layout", () => {
 
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Blog" })).toHaveAttribute("href", "/blog");
-    expect(screen.getByRole("link", { name: "Projects" })).toHaveAttribute("href", "/#projects-heading");
+    expect(screen.getByRole("link", { name: "Projects" })).toHaveAttribute("href", "/projects");
   });
 
   it("renders default title when not provided", () => {
