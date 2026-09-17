@@ -1,7 +1,7 @@
 ---
 title: "evalix"
 date: "2026-09-14"
-slug: "capix"
+slug: "evalix"
 description: "A small eval harness that tells you which cases your prompt change broke."
 ---
 
