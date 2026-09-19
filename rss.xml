@@ -1,16 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 19 Sep 2026 11:47:56 GMT</lastBuildDate><item><title><![CDATA[If You Can't Score It, You Are Vibing]]></title><description><![CDATA[I finally ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise.]]></description><link>https://frycz.github.io/blog/simple-prompt-eval</link><guid isPermaLink="false">https://frycz.github.io/blog/simple-prompt-eval</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;A few months ago I wrote that &lt;a href=&quot;/blog/ai-engineering&quot;&gt;AI engineering&lt;/a&gt; means evals with graded rubrics, run over samples, judged statistically. Then I went back to my own prompts and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.&lt;/p&gt;
-&lt;p&gt;That is not engineering. That is &lt;a href=&quot;/blog/vibe-conding-is-awesome&quot;&gt;vibe-coding&lt;/a&gt; with extra steps, and I like vibe-coding, but I should at least know when I am doing it.&lt;/p&gt;
-&lt;p&gt;So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost seven cents.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 19 Sep 2026 14:56:40 GMT</lastBuildDate><item><title><![CDATA[If You Can't Score It, You Are Vibing]]></title><description><![CDATA[I ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise.]]></description><link>https://frycz.github.io/blog/simple-prompt-eval</link><guid isPermaLink="false">https://frycz.github.io/blog/simple-prompt-eval</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;A few months ago I wrote that &lt;a href=&quot;/blog/ai-engineering&quot;&gt;AI engineering&lt;/a&gt; means evals with graded rubrics, run over samples, judged statistically. Then I went back to to prompting and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.&lt;/p&gt;
+&lt;p&gt;That is not engineering, that is &lt;a href=&quot;/blog/vibe-conding-is-awesome&quot;&gt;vibe-coding&lt;/a&gt; with extra steps. Engineering means measuring and improving based on the results.&lt;/p&gt;
+&lt;p&gt;So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost less than a dollar.&lt;/p&gt;
+&lt;p&gt;It is all on GitHub — report, cases, prompts and the runs it is scored from: &lt;a href=&quot;https://github.com/frycz/prompt-eval-describe-vs-specify&quot;&gt;prompt-eval-describe-vs-specify&lt;/a&gt;&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2&gt;A Toy Experiment&lt;/h2&gt;
 &lt;p&gt;The task: sort a support ticket into one of eight categories. I hand-wrote 44 tickets and labelled them — eight easy ones, fourteen sitting deliberately on a category boundary, and twenty-two held back to check whether my rules generalise or just memorise.&lt;/p&gt;
-&lt;p&gt;Then two prompts. The first one is the prompt we all write:&lt;/p&gt;
+&lt;p&gt;Then I wrote two prompts. The first one is a description of what I wanted:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Classify this support ticket into one of these categories:
 billing, bug, feature_request, account_access, how_to, integration, performance, spam
 
 Answer with the category name and nothing else.
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Twenty-five words. The second one is 283 — a definition for every category, and four rules for what to do when two of them both look right:&lt;/p&gt;
+&lt;p&gt;Twenty-five words. The second one is 283 — it contains definitions for every category, and four rules for what to do when two of them both look right. That&apos;s the difference, it is not just a description of what I need, it is a precise definition:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Classify this support ticket into exactly one of these categories:
 billing, bug, feature_request, account_access, how_to, integration, performance, spam.
 
@@ -32,7 +33,7 @@ How to decide:
 
 Answer with the category name and nothing else.
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;That is the entire difference. Same model (&lt;code&gt;claude-haiku-4-5&lt;/code&gt;), same 44 tickets, three repeats each:&lt;/p&gt;
+&lt;p&gt;Same model (&lt;code&gt;claude-haiku-4-5&lt;/code&gt;), same 44 tickets, three repeats each:&lt;/p&gt;
 &lt;table&gt;
 &lt;thead&gt;
 &lt;tr&gt;
@@ -57,11 +58,11 @@ Answer with the category name and nothing else.
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-&lt;p&gt;Nice, big, and honestly the least interesting thing I found.&lt;/p&gt;
+&lt;p&gt;The first prompt wasn&apos;t bad, surprisingly. The second one was way more accurate but 4x expensive.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2&gt;The Model Had Opinions&lt;/h2&gt;
 &lt;p&gt;Here is what I expected: the lazy prompt would be confused, flip-flopping between categories, generally a bit lost.&lt;/p&gt;
-&lt;p&gt;Wrong. The lazy prompt failed ten cases, and nine of them were wrong in all three repeats, usually with exactly the same wrong answer. The model was not confused at all. It had a firm, stable opinion about where the line between &lt;code&gt;bug&lt;/code&gt; and &lt;code&gt;integration&lt;/code&gt; sits. That opinion just wasn&apos;t mine.&lt;/p&gt;
+&lt;p&gt;Nope. The lazy prompt failed ten cases, and nine of them were wrong in all three repeats, usually with exactly the same wrong answer. The model was not confused at all. It had a firm, stable opinion about where the line between &lt;code&gt;bug&lt;/code&gt; and &lt;code&gt;integration&lt;/code&gt; sits. That opinion just wasn&apos;t mine.&lt;/p&gt;
 &lt;p&gt;That reframed the whole thing for me. I was not teaching the model the categories — it knows what an integration is better than I do. I was telling it which of several reasonable conventions I happened to want. A category list is not a spec. A spec is the list plus the tie-break rules, and writing those rules is the actual work.&lt;/p&gt;
 &lt;p&gt;Look at the edge column in that table again — 0.595 to 0.952. That is the whole story in one number. The easy tickets never separated the two prompts at all; both scored a perfect 1.000 on them. All of the value lived on the boundaries.&lt;/p&gt;
 &lt;hr&gt;
@@ -108,15 +109,13 @@ Answer with the category name and nothing else.
 &lt;p&gt;I also did the thing that feels ridiculous at this scale: a significance test. Paired McNemar, about ten lines of Python. It confirmed the result (nine cases fixed, zero broken, p ≈ 0.004), but the useful part was the other number it gave me — with 44 cases, a change has to fix at least six of them without breaking any before I can tell it apart from noise. Every small prompt tweak I might make on this set is unmeasurable. That is worth knowing &lt;em&gt;before&lt;/em&gt; spending an afternoon on one.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2&gt;Maybe My Labels Are Wrong&lt;/h2&gt;
-&lt;p&gt;When a case refuses to pass, there is a lovely temptation: decide the label was wrong all along. Do that only for cases that are failing and you are not evaluating anything, you are marking your own homework.&lt;/p&gt;
+&lt;p&gt;When a case refuses to pass, there is a temptation: decide the label was wrong all along. Do that only for cases that are failing and you are not evaluating anything, you are marking your own homework.&lt;/p&gt;
 &lt;p&gt;So I picked the rule first, then applied it to all 44 cases: &lt;em&gt;does the ticket leave out a fact that decides the category?&lt;/em&gt; Not &quot;could someone argue for another answer&quot; — several tickets sit on a boundary, but the facts are there and the rules settle them. That is a convention, and conventions are the prompt&apos;s job.&lt;/p&gt;
 &lt;p&gt;Exactly one case failed. An invoice for 12 seats when SCIM only created 9 users is either a billing error or an integration failure, and the ticket genuinely does not say which.&lt;/p&gt;
 &lt;p&gt;The better find was the case I &lt;em&gt;thought&lt;/em&gt; was a bad label. It wasn&apos;t. My spec contradicts itself: the &lt;code&gt;bug&lt;/code&gt; definition covers it, and tie-break rule 2 sends it to &lt;code&gt;billing&lt;/code&gt;. Both apply, so the model picks billing three times out of five. I wrote that bug myself, in English, and no score would ever have shown it to me.&lt;/p&gt;
 &lt;hr&gt;
 &lt;h2&gt;Final Words&lt;/h2&gt;
-&lt;p&gt;The spec prompt is also 4.8× more expensive per ticket — $0.46 versus $0.10 per thousand — almost entirely because it is longer. Irrelevant at my scale, the whole trade-off at someone else&apos;s.&lt;/p&gt;
-&lt;p&gt;None of this is sophisticated. It is 44 rows of JSON, a scoring script, and the patience to run things more than once. But I have written a lot of prompts on vibes, and the first time I measured one properly it told me that my model had opinions, my prompt contradicted itself, and my labels had an ambiguity in them. Seven cents.&lt;/p&gt;
-&lt;p&gt;It is all on GitHub — report, cases, prompts and the runs it is scored from: &lt;a href=&quot;https://github.com/frycz/prompt-eval-describe-vs-specify&quot;&gt;prompt-eval-describe-vs-specify&lt;/a&gt;. Every number in it re-computes offline, without an API key. Which is the other half of the point :)&lt;/p&gt;</content:encoded></item><item><title><![CDATA[evalix]]></title><description><![CDATA[A small eval harness that tells you which cases your prompt change broke.]]></description><link>https://frycz.github.io/projects/evalix</link><guid isPermaLink="false">https://frycz.github.io/projects/evalix</guid><pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
+&lt;p&gt;None of this is sophisticated. It is 44 rows of JSON, a scoring script, and the patience to run things more than once. But I have written a lot of prompts on vibes, and the first time I measured one properly it told me that my model had opinions, my prompt contradicted itself, and my labels had an ambiguity in them. For less that a dollar. Cheers!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[evalix]]></title><description><![CDATA[A small eval harness that tells you which cases your prompt change broke.]]></description><link>https://frycz.github.io/projects/evalix</link><guid isPermaLink="false">https://frycz.github.io/projects/evalix</guid><pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;Repo: &lt;a href=&quot;https://github.com/frycz/evalix&quot;&gt;https://github.com/frycz/evalix&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;PyPI: &lt;a href=&quot;https://pypi.org/project/evalix/&quot;&gt;pypi.org/project/evalix&lt;/a&gt;&lt;/li&gt;
