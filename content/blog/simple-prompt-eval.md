@@ -1,5 +1,5 @@
 ---
-title: "If You Can't Score It, You Are Vibing"
+title: "If You Don't Measure, You Are Vibing"
 date: "2026-09-19"
 slug: "simple-prompt-eval"
 description: "I ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise."
