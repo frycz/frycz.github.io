@@ -2,14 +2,16 @@
 title: "If You Can't Score It, You Are Vibing"
 date: "2026-09-19"
 slug: "simple-prompt-eval"
-description: "I finally ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise."
+description: "I ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise."
 ---
 
-A few months ago I wrote that [AI engineering](/blog/ai-engineering) means evals with graded rubrics, run over samples, judged statistically. Then I went back to my own prompts and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.
+A few months ago I wrote that [AI engineering](/blog/ai-engineering) means evals with graded rubrics, run over samples, judged statistically. Then I went back to to prompting and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.
 
-That is not engineering. That is [vibe-coding](/blog/vibe-conding-is-awesome) with extra steps, and I like vibe-coding, but I should at least know when I am doing it.
+That is not engineering, that is [vibe-coding](/blog/vibe-conding-is-awesome) with extra steps. Engineering means measuring and improving based on the results.
 
-So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost seven cents.
+So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost less than a dollar.
+
+It is all on GitHub — report, cases, prompts and the runs it is scored from: [prompt-eval-describe-vs-specify](https://github.com/frycz/prompt-eval-describe-vs-specify)
 
 ---
 
@@ -17,7 +19,7 @@ So I ran a real evaluation on a deliberately small problem, wrote down everythin
 
 The task: sort a support ticket into one of eight categories. I hand-wrote 44 tickets and labelled them — eight easy ones, fourteen sitting deliberately on a category boundary, and twenty-two held back to check whether my rules generalise or just memorise.
 
-Then two prompts. The first one is the prompt we all write:
+Then I wrote two prompts. The first one is a description of what I wanted:
 
 ```text
 Classify this support ticket into one of these categories:
@@ -26,7 +28,7 @@ billing, bug, feature_request, account_access, how_to, integration, performance,
 Answer with the category name and nothing else.
 ```
 
-Twenty-five words. The second one is 283 — a definition for every category, and four rules for what to do when two of them both look right:
+Twenty-five words. The second one is 283 — it contains definitions for every category, and four rules for what to do when two of them both look right. That's the difference, it is not just a description of what I need, it is a precise definition:
 
 ```text
 Classify this support ticket into exactly one of these categories:
@@ -51,14 +53,14 @@ How to decide:
 Answer with the category name and nothing else.
 ```
 
-That is the entire difference. Same model (`claude-haiku-4-5`), same 44 tickets, three repeats each:
+Same model (`claude-haiku-4-5`), same 44 tickets, three repeats each:
 
 | Prompt | Accuracy | Edge cases | $ / 1k tickets |
 |---|---|---|---|
 | lazy | 0.780 | 0.595 | $0.10 |
 | spec | 0.970 | 0.952 | $0.46 |
 
-Nice, big, and honestly the least interesting thing I found.
+The first prompt wasn't bad, surprisingly. The second one was way more accurate but 4x expensive.
 
 ---
 
@@ -66,7 +68,7 @@ Nice, big, and honestly the least interesting thing I found.
 
 Here is what I expected: the lazy prompt would be confused, flip-flopping between categories, generally a bit lost.
 
-Wrong. The lazy prompt failed ten cases, and nine of them were wrong in all three repeats, usually with exactly the same wrong answer. The model was not confused at all. It had a firm, stable opinion about where the line between `bug` and `integration` sits. That opinion just wasn't mine.
+Nope. The lazy prompt failed ten cases, and nine of them were wrong in all three repeats, usually with exactly the same wrong answer. The model was not confused at all. It had a firm, stable opinion about where the line between `bug` and `integration` sits. That opinion just wasn't mine.
 
 That reframed the whole thing for me. I was not teaching the model the categories — it knows what an integration is better than I do. I was telling it which of several reasonable conventions I happened to want. A category list is not a spec. A spec is the list plus the tie-break rules, and writing those rules is the actual work.
 
@@ -96,7 +98,7 @@ I also did the thing that feels ridiculous at this scale: a significance test. P
 
 ## Maybe My Labels Are Wrong
 
-When a case refuses to pass, there is a lovely temptation: decide the label was wrong all along. Do that only for cases that are failing and you are not evaluating anything, you are marking your own homework.
+When a case refuses to pass, there is a temptation: decide the label was wrong all along. Do that only for cases that are failing and you are not evaluating anything, you are marking your own homework.
 
 So I picked the rule first, then applied it to all 44 cases: *does the ticket leave out a fact that decides the category?* Not "could someone argue for another answer" — several tickets sit on a boundary, but the facts are there and the rules settle them. That is a convention, and conventions are the prompt's job.
 
@@ -108,8 +110,4 @@ The better find was the case I *thought* was a bad label. It wasn't. My spec con
 
 ## Final Words
 
-The spec prompt is also 4.8× more expensive per ticket — $0.46 versus $0.10 per thousand — almost entirely because it is longer. Irrelevant at my scale, the whole trade-off at someone else's.
-
-None of this is sophisticated. It is 44 rows of JSON, a scoring script, and the patience to run things more than once. But I have written a lot of prompts on vibes, and the first time I measured one properly it told me that my model had opinions, my prompt contradicted itself, and my labels had an ambiguity in them. Seven cents.
-
-It is all on GitHub — report, cases, prompts and the runs it is scored from: [prompt-eval-describe-vs-specify](https://github.com/frycz/prompt-eval-describe-vs-specify). Every number in it re-computes offline, without an API key. Which is the other half of the point :)
+None of this is sophisticated. It is 44 rows of JSON, a scoring script, and the patience to run things more than once. But I have written a lot of prompts on vibes, and the first time I measured one properly it told me that my model had opinions, my prompt contradicted itself, and my labels had an ambiguity in them. For less that a dollar. Cheers!
