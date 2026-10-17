@@ -43,7 +43,7 @@ This also explains something that used to confuse me. When an agent produced som
 
 When I say constraint, I don't mean a rule like "maximum 50 characters." I mean it much more loosely. Anything that pushes the agent down one path and away from the others counts.
 
-The prompt itself is a constraint, maybe the biggest one, because it sets the direction before anything else happens. A list of tools for a web app is a constraint. A page of architecture guidelines for an API server is a constraint. Acceptance criteria are a constraint too, since they mark where the path ends. Even the example files you drop into the conversation count, because the agent will lean toward whatever patterns it sees in them.
+The prompt itself is a constraint. A list of tools for a web app is a constraint. A page of architecture guidelines for an API server is... yes, a constraint. Acceptance criteria are a constraint too, since they mark where the path ends. Even the example files you drop into the conversation count, because the agent will lean toward whatever patterns it sees in them.
 
 Once I saw it this way, all the separate tricks people share online started to look like one idea. "Give the model a role." "Show it examples." "Write a style guide." "Use a system prompt." "Give the agent only the tools it needs." These sound like five different techniques. To me they're the same move made five ways: narrowing the space until the good answer is the likely one.
 
