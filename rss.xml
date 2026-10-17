@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 17 Oct 2026 10:11:41 GMT</lastBuildDate><item><title><![CDATA[The Unified Theory of Constrains]]></title><description><![CDATA[Every trick that makes AI agents work better is the same move: narrowing the space until the good answer is the likely one.]]></description><link>https://frycz.github.io/blog/unified-theory-of-constraints</link><guid isPermaLink="false">https://frycz.github.io/blog/unified-theory-of-constraints</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Whenever I get a result I like out of an AI agent, I look back at what I did, and it never looks like I gave great instructions. It looks like I chose good limits.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 17 Oct 2026 10:48:27 GMT</lastBuildDate><item><title><![CDATA[The Unified Theory of Constrains]]></title><description><![CDATA[Every trick that makes AI agents work better is the same move: narrowing the space until the good answer is the likely one.]]></description><link>https://frycz.github.io/blog/unified-theory-of-constraints</link><guid isPermaLink="false">https://frycz.github.io/blog/unified-theory-of-constraints</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Whenever I get a result I like out of an AI agent, I look back at what I did, and it never looks like I gave great instructions. It looks like I chose good limits.&lt;/p&gt;
 &lt;p&gt;I&apos;d been thinking of my prompts as requests, the way you&apos;d ask a colleague for a favor. But the requests that worked best were the ones that closed doors. Use these three tools. Follow this style. Don&apos;t touch that folder. Stop when this test passes. Each one removed options, and somehow the result got better every time I removed more.&lt;/p&gt;
 &lt;p&gt;Then it reminded me of something much older than AI.&lt;/p&gt;
 &lt;h2&gt;The painter picks the paint first&lt;/h2&gt;
@@ -20,13 +20,19 @@
 &lt;p&gt;The prompt itself is a constraint, maybe the biggest one, because it sets the direction before anything else happens. A list of tools for a web app is a constraint. A page of architecture guidelines for an API server is a constraint. Acceptance criteria are a constraint too, since they mark where the path ends. Even the example files you drop into the conversation count, because the agent will lean toward whatever patterns it sees in them.&lt;/p&gt;
 &lt;p&gt;Once I saw it this way, all the separate tricks people share online started to look like one idea. &quot;Give the model a role.&quot; &quot;Show it examples.&quot; &quot;Write a style guide.&quot; &quot;Use a system prompt.&quot; &quot;Give the agent only the tools it needs.&quot; These sound like five different techniques. To me they&apos;re the same move made five ways: narrowing the space until the good answer is the likely one.&lt;/p&gt;
 &lt;p&gt;They also stack. When I build an API server with an agent, I end up with something like this:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;The prompt: build a small production API for this purpose.&lt;/li&gt;
-&lt;li&gt;The tools: Node, Express, PostgreSQL.&lt;/li&gt;
-&lt;li&gt;The philosophy: domain-driven design, strict types, no clever tricks.&lt;/li&gt;
-&lt;li&gt;The finish line: these endpoints exist and these tests pass.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;The nice thing is that each layer can change without touching the others. If I swap Node and PostgreSQL for Python and MongoDB, the prompt, the philosophy and the finish line stay exactly as they were. The agent adjusts because I moved one wall of the room, and the rest of the room is still there.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌──────────────────────────────────────────────────────────────┐
+│  GOAL          these endpoints exist, these tests pass       │
+├──────────────────────────────────────────────────────────────┤
+│  PHILOSOPHY    domain-driven design, strict types,           │
+│                no clever tricks                              │
+├──────────────────────────────────────────────────────────────┤
+│  TOOLS         Node, Express, PostgreSQL                     │
+├──────────────────────────────────────────────────────────────┤
+│  PROMPT        build a small production API for this         │
+│                purpose                                       │
+└──────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The nice thing is that each layer can change without touching the others. If I swap Node and PostgreSQL for Python and MongoDB, the prompt, the philosophy and the goal stay exactly as they were. The agent adjusts because I moved one wall of the room, and the rest of the room is still there.&lt;/p&gt;
 &lt;h2&gt;Constraints you can keep&lt;/h2&gt;
 &lt;p&gt;This is where the idea gets practical, and where I think most of us are wasting effort right now.&lt;/p&gt;
 &lt;p&gt;If constraints are what make the results good, then they&apos;re worth more than the results. A good set of API guidelines works for the next ten projects. A style guide I spent an evening on improves every piece of writing after it. Yet most of this work lives in a chat window and disappears when I close the tab. Next week I type a weaker version from memory.&lt;/p&gt;
