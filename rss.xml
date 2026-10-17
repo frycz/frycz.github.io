@@ -1,121 +1,40 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 19 Sep 2026 15:10:00 GMT</lastBuildDate><item><title><![CDATA[If You Don't Measure, You Are Vibing]]></title><description><![CDATA[I ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise.]]></description><link>https://frycz.github.io/blog/simple-prompt-eval</link><guid isPermaLink="false">https://frycz.github.io/blog/simple-prompt-eval</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;A few months ago I wrote that &lt;a href=&quot;/blog/ai-engineering&quot;&gt;AI engineering&lt;/a&gt; means evals with graded rubrics, run over samples, judged statistically. Then I went back to to prompting and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.&lt;/p&gt;
-&lt;p&gt;That is not engineering, that is &lt;a href=&quot;/blog/vibe-conding-is-awesome&quot;&gt;vibe-coding&lt;/a&gt; with extra steps. Engineering means measuring and improving based on the results.&lt;/p&gt;
-&lt;p&gt;So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost less than a dollar.&lt;/p&gt;
-&lt;p&gt;It is all on GitHub — report, cases, prompts and the runs it is scored from: &lt;a href=&quot;https://github.com/frycz/prompt-eval-describe-vs-specify&quot;&gt;prompt-eval-describe-vs-specify&lt;/a&gt;&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;A Toy Experiment&lt;/h2&gt;
-&lt;p&gt;The task: sort a support ticket into one of eight categories. I hand-wrote 44 tickets and labelled them — eight easy ones, fourteen sitting deliberately on a category boundary, and twenty-two held back to check whether my rules generalise or just memorise.&lt;/p&gt;
-&lt;p&gt;Then I wrote two prompts. The first one is a description of what I wanted:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Classify this support ticket into one of these categories:
-billing, bug, feature_request, account_access, how_to, integration, performance, spam
-
-Answer with the category name and nothing else.
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Twenty-five words. The second one is 283 — it contains definitions for every category, and four rules for what to do when two of them both look right. That&apos;s the difference, it is not just a description of what I need, it is a precise definition:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Classify this support ticket into exactly one of these categories:
-billing, bug, feature_request, account_access, how_to, integration, performance, spam.
-
-Categories:
-billing - what the customer pays or is subscribed to: charges, refunds, invoices, plan changes, cancelling or closing an account.
-bug - our app behaves incorrectly: wrong results, wrong data shown, errors, a state that isn&apos;t applied.
-performance - our app works correctly but is too slow, freezes or hangs.
-account_access - who can get into or control an account: sign-in, credentials, 2FA, roles, ownership. Not closing an account.
-integration - a connection between our app and an external system misbehaves. If it works correctly inside our app but goes wrong in or through the external system, it is integration.
-how_to - the user asks how to do something or whether something exists or is included.
-feature_request - the user asks for a capability that doesn&apos;t exist, or for an intended limit to change.
-spam - unsolicited sales, marketing or partnership pitches, scams.
-
-How to decide:
-1. Classify by the action support must take to resolve the ticket, not by the user&apos;s wording (&quot;broken&quot;, &quot;bug&quot;) or by where in the product it happened.
-2. If the fix is to change money or a subscription, it is billing. If the fix is to change our app&apos;s behaviour, it is bug or performance. An external system mentioned only as background doesn&apos;t make it integration.
-3. Incorrect result -&gt; bug. Correct result, delivered too slowly -&gt; performance.
-4. When a ticket reports a concrete problem and also asks a question or makes a suggestion, classify the problem. A question with a hypothetical &quot;if not, add it&quot; is still how_to.
-
-Answer with the category name and nothing else.
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Same model (&lt;code&gt;claude-haiku-4-5&lt;/code&gt;), same 44 tickets, three repeats each:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Prompt&lt;/th&gt;
-&lt;th&gt;Accuracy&lt;/th&gt;
-&lt;th&gt;Edge cases&lt;/th&gt;
-&lt;th&gt;$ / 1k tickets&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;lazy&lt;/td&gt;
-&lt;td&gt;0.780&lt;/td&gt;
-&lt;td&gt;0.595&lt;/td&gt;
-&lt;td&gt;$0.10&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;spec&lt;/td&gt;
-&lt;td&gt;0.970&lt;/td&gt;
-&lt;td&gt;0.952&lt;/td&gt;
-&lt;td&gt;$0.46&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;The first prompt wasn&apos;t bad, surprisingly. The second one was way more accurate but 4x expensive.&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;The Model Had Opinions&lt;/h2&gt;
-&lt;p&gt;Here is what I expected: the lazy prompt would be confused, flip-flopping between categories, generally a bit lost.&lt;/p&gt;
-&lt;p&gt;Nope. The lazy prompt failed ten cases, and nine of them were wrong in all three repeats, usually with exactly the same wrong answer. The model was not confused at all. It had a firm, stable opinion about where the line between &lt;code&gt;bug&lt;/code&gt; and &lt;code&gt;integration&lt;/code&gt; sits. That opinion just wasn&apos;t mine.&lt;/p&gt;
-&lt;p&gt;That reframed the whole thing for me. I was not teaching the model the categories — it knows what an integration is better than I do. I was telling it which of several reasonable conventions I happened to want. A category list is not a spec. A spec is the list plus the tie-break rules, and writing those rules is the actual work.&lt;/p&gt;
-&lt;p&gt;Look at the edge column in that table again — 0.595 to 0.952. That is the whole story in one number. The easy tickets never separated the two prompts at all; both scored a perfect 1.000 on them. All of the value lived on the boundaries.&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;One Run Is a Lie&lt;/h2&gt;
-&lt;p&gt;I ran the good prompt five times in total:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Pass&lt;/th&gt;
-&lt;th&gt;Score&lt;/th&gt;
-&lt;th&gt;Failed&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;0.977&lt;/td&gt;
-&lt;td&gt;h18&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;0.977&lt;/td&gt;
-&lt;td&gt;h15&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;td&gt;0.977&lt;/td&gt;
-&lt;td&gt;t13&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;4&lt;/td&gt;
-&lt;td&gt;0.955&lt;/td&gt;
-&lt;td&gt;t10, h18&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;5&lt;/td&gt;
-&lt;td&gt;0.977&lt;/td&gt;
-&lt;td&gt;h18&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Four different cases failed at least once. None of them failed every time. And look at the failure column — any single pass shows me one weak case, maybe two, and lets me believe everything else is solid. It took five passes to see all four.&lt;/p&gt;
-&lt;p&gt;If you run your prompt once, congratulate yourself and ship, you are not measuring your prompt. You are measuring one sample of it.&lt;/p&gt;
-&lt;p&gt;I also did the thing that feels ridiculous at this scale: a significance test. Paired McNemar, about ten lines of Python. It confirmed the result (nine cases fixed, zero broken, p ≈ 0.004), but the useful part was the other number it gave me — with 44 cases, a change has to fix at least six of them without breaking any before I can tell it apart from noise. Every small prompt tweak I might make on this set is unmeasurable. That is worth knowing &lt;em&gt;before&lt;/em&gt; spending an afternoon on one.&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;Maybe My Labels Are Wrong&lt;/h2&gt;
-&lt;p&gt;When a case refuses to pass, there is a temptation: decide the label was wrong all along. Do that only for cases that are failing and you are not evaluating anything, you are marking your own homework.&lt;/p&gt;
-&lt;p&gt;So I picked the rule first, then applied it to all 44 cases: &lt;em&gt;does the ticket leave out a fact that decides the category?&lt;/em&gt; Not &quot;could someone argue for another answer&quot; — several tickets sit on a boundary, but the facts are there and the rules settle them. That is a convention, and conventions are the prompt&apos;s job.&lt;/p&gt;
-&lt;p&gt;Exactly one case failed. An invoice for 12 seats when SCIM only created 9 users is either a billing error or an integration failure, and the ticket genuinely does not say which.&lt;/p&gt;
-&lt;p&gt;The better find was the case I &lt;em&gt;thought&lt;/em&gt; was a bad label. It wasn&apos;t. My spec contradicts itself: the &lt;code&gt;bug&lt;/code&gt; definition covers it, and tie-break rule 2 sends it to &lt;code&gt;billing&lt;/code&gt;. Both apply, so the model picks billing three times out of five. I wrote that bug myself, in English, and no score would ever have shown it to me.&lt;/p&gt;
-&lt;hr&gt;
-&lt;h2&gt;Final Words&lt;/h2&gt;
-&lt;p&gt;None of this is sophisticated. It is 44 rows of JSON, a scoring script, and the patience to run things more than once. But I have written a lot of prompts on vibes, and the first time I measured one properly it told me that my model had opinions, my prompt contradicted itself, and my labels had an ambiguity in them. For less that a dollar. Cheers!&lt;/p&gt;</content:encoded></item><item><title><![CDATA[evalix]]></title><description><![CDATA[A small eval harness that tells you which cases your prompt change broke.]]></description><link>https://frycz.github.io/projects/evalix</link><guid isPermaLink="false">https://frycz.github.io/projects/evalix</guid><pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sat, 17 Oct 2026 10:11:41 GMT</lastBuildDate><item><title><![CDATA[The Unified Theory of Constrains]]></title><description><![CDATA[Every trick that makes AI agents work better is the same move: narrowing the space until the good answer is the likely one.]]></description><link>https://frycz.github.io/blog/unified-theory-of-constraints</link><guid isPermaLink="false">https://frycz.github.io/blog/unified-theory-of-constraints</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Whenever I get a result I like out of an AI agent, I look back at what I did, and it never looks like I gave great instructions. It looks like I chose good limits.&lt;/p&gt;
+&lt;p&gt;I&apos;d been thinking of my prompts as requests, the way you&apos;d ask a colleague for a favor. But the requests that worked best were the ones that closed doors. Use these three tools. Follow this style. Don&apos;t touch that folder. Stop when this test passes. Each one removed options, and somehow the result got better every time I removed more.&lt;/p&gt;
+&lt;p&gt;Then it reminded me of something much older than AI.&lt;/p&gt;
+&lt;h2&gt;The painter picks the paint first&lt;/h2&gt;
+&lt;p&gt;Think about how people make things. A painter doesn&apos;t start with every color that exists. They squeeze out five or six onto a palette, and that small set is a big part of why the painting looks like theirs. A musician picks a handful of sounds for an album and lives inside them for a year. A sculptor chooses marble or wood, a chisel or a rasp, and those choices decide half the shape before the first cut.&lt;/p&gt;
+&lt;p&gt;None of these people feel trapped by their choices. The choices are where the style comes from. An artist with infinite options and no limits usually produces nothing, or produces mud.&lt;/p&gt;
+&lt;p&gt;Working with an AI model feels like that. The painter starts with an empty canvas and adds. With a model, you start with a canvas that already holds every possible picture at once, and your job is to take things away until only the one you want is left. That&apos;s much closer to sculpting than painting. You&apos;re cutting away stone.&lt;/p&gt;
+&lt;h2&gt;From instructing to designing space&lt;/h2&gt;
+&lt;p&gt;For most of computing history, we told machines exactly what to do, step by step. Load this, compare that, if this then that. The computer did nothing we didn&apos;t spell out.&lt;/p&gt;
+&lt;p&gt;Agents don&apos;t work this way, and trying to make them do so is exhausting. You can&apos;t list every step for &quot;build me a small web app for tracking my runs.&quot; There are thousands of steps and you don&apos;t know most of them in advance. That&apos;s the whole reason you asked.&lt;/p&gt;
+&lt;p&gt;What you can do is shape the room the agent works in. Tell it to use React and Tailwind, and you&apos;ve closed off Vue, Angular and hand-written CSS without mentioning them. Tell it the API should be stateless and follow REST, and you&apos;ve ruled out a huge number of designs it might have wandered into. You haven&apos;t told it how to walk. You&apos;ve built the hallway.&lt;/p&gt;
+&lt;p&gt;I find this a calmer way to work. I stop trying to predict every move and start asking a different question: what does the space look like where only good answers fit?&lt;/p&gt;
+&lt;h2&gt;Managing the probability space&lt;/h2&gt;
+&lt;p&gt;A language model works on likelihoods. Ask it something vague and it gives you the most average answer it can find, because the average is the safest bet when it knows nothing about you. That&apos;s why &quot;write a blog post about productivity&quot; gets you the same post everyone has already read.&lt;/p&gt;
+&lt;p&gt;Every detail you add shifts those odds. Name your audience and the average moves. Hand it an example of your writing and it moves again. Say which words you hate and a whole family of bland answers drops out. I picture it like a cloud of possible outputs that gets smaller and denser with each thing I add, until most of what&apos;s left is close to what I had in my head.&lt;/p&gt;
+&lt;p&gt;So the rule I keep coming back to is simple. The more specific the limits, the more likely the result is the one you wanted. A one-line prompt is a lottery ticket. A prompt plus a tool list plus a style guide plus a clear finish line is closer to a recipe.&lt;/p&gt;
+&lt;p&gt;This also explains something that used to confuse me. When an agent produced something strange, I&apos;d blame the model. Now my first question is what I left open. Usually there&apos;s a door I forgot to close, and the agent walked through it, which is exactly what it should do with an open door.&lt;/p&gt;
+&lt;h2&gt;The unified theory of constraints&lt;/h2&gt;
+&lt;p&gt;When I say constraint, I don&apos;t mean a rule like &quot;maximum 50 characters.&quot; I mean it much more loosely. Anything that pushes the agent down one path and away from the others counts.&lt;/p&gt;
+&lt;p&gt;The prompt itself is a constraint, maybe the biggest one, because it sets the direction before anything else happens. A list of tools for a web app is a constraint. A page of architecture guidelines for an API server is a constraint. Acceptance criteria are a constraint too, since they mark where the path ends. Even the example files you drop into the conversation count, because the agent will lean toward whatever patterns it sees in them.&lt;/p&gt;
+&lt;p&gt;Once I saw it this way, all the separate tricks people share online started to look like one idea. &quot;Give the model a role.&quot; &quot;Show it examples.&quot; &quot;Write a style guide.&quot; &quot;Use a system prompt.&quot; &quot;Give the agent only the tools it needs.&quot; These sound like five different techniques. To me they&apos;re the same move made five ways: narrowing the space until the good answer is the likely one.&lt;/p&gt;
+&lt;p&gt;They also stack. When I build an API server with an agent, I end up with something like this:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The prompt: build a small production API for this purpose.&lt;/li&gt;
+&lt;li&gt;The tools: Node, Express, PostgreSQL.&lt;/li&gt;
+&lt;li&gt;The philosophy: domain-driven design, strict types, no clever tricks.&lt;/li&gt;
+&lt;li&gt;The finish line: these endpoints exist and these tests pass.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The nice thing is that each layer can change without touching the others. If I swap Node and PostgreSQL for Python and MongoDB, the prompt, the philosophy and the finish line stay exactly as they were. The agent adjusts because I moved one wall of the room, and the rest of the room is still there.&lt;/p&gt;
+&lt;h2&gt;Constraints you can keep&lt;/h2&gt;
+&lt;p&gt;This is where the idea gets practical, and where I think most of us are wasting effort right now.&lt;/p&gt;
+&lt;p&gt;If constraints are what make the results good, then they&apos;re worth more than the results. A good set of API guidelines works for the next ten projects. A style guide I spent an evening on improves every piece of writing after it. Yet most of this work lives in a chat window and disappears when I close the tab. Next week I type a weaker version from memory.&lt;/p&gt;
+&lt;p&gt;Constraints should be treated like any other thing we build carefully. You write one down. You try it on real tasks and watch where the agent ignores it or misreads it. You fix the wording. You keep it somewhere you can find it, and you share it with people who do similar work. Someone else takes your guidelines, changes two lines for their team, and passes that version on.&lt;/p&gt;
+&lt;p&gt;Programmers already do this with code: nobody writes their own date library, they pull in one that thousands of people have tested. I&apos;d like the same for the things that shape agents. Picture starting a project by picking a tested set of architecture guidelines, a writing voice you trust, and a short tool list, instead of starting from a blank prompt box and hoping.&lt;/p&gt;
+&lt;h2&gt;The human part&lt;/h2&gt;
+&lt;p&gt;This changes how I see my own role. I write less of the actual code or text than I used to. What I do more is decide what good looks like, and then describe the space where good is the only thing that fits.&lt;/p&gt;
+&lt;p&gt;That&apos;s still craft. It&apos;s the same craft the painter uses when choosing six colors out of hundreds, and it still comes from taste, experience and knowing what you want. The agent has every option in the world. Our job is to give it the right few.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[evalix]]></title><description><![CDATA[A small eval harness that tells you which cases your prompt change broke.]]></description><link>https://frycz.github.io/projects/evalix</link><guid isPermaLink="false">https://frycz.github.io/projects/evalix</guid><pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;About&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;Repo: &lt;a href=&quot;https://github.com/frycz/evalix&quot;&gt;https://github.com/frycz/evalix&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;PyPI: &lt;a href=&quot;https://pypi.org/project/evalix/&quot;&gt;pypi.org/project/evalix&lt;/a&gt;&lt;/li&gt;
