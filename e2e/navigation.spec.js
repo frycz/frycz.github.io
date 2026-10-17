@@ -28,7 +28,7 @@ test.describe("Navigation", () => {
 
   test("navigate back to homepage via About link", async ({ page }) => {
     await page.goto("/blog");
-    await page.getByRole("link", { name: "About" }).click();
+    await page.getByRole("link", { name: "Home" }).click();
     await expect(page).toHaveURL("/");
   });
 

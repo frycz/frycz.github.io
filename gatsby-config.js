@@ -11,6 +11,8 @@ module.exports = {
       options: {
         name: "blog",
         path: `${__dirname}/content/blog`,
+        // files prefixed with "_" are drafts and are not published
+        ignore: ["**/_*"],
       },
     },
     {
