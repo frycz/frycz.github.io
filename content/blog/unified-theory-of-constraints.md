@@ -49,12 +49,21 @@ Once I saw it this way, all the separate tricks people share online started to l
 
 They also stack. When I build an API server with an agent, I end up with something like this:
 
-1. The prompt: build a small production API for this purpose.
-2. The tools: Node, Express, PostgreSQL.
-3. The philosophy: domain-driven design, strict types, no clever tricks.
-4. The finish line: these endpoints exist and these tests pass.
+```
+┌──────────────────────────────────────────────────────────────┐
+│  GOAL          these endpoints exist, these tests pass       │
+├──────────────────────────────────────────────────────────────┤
+│  PHILOSOPHY    domain-driven design, strict types,           │
+│                no clever tricks                              │
+├──────────────────────────────────────────────────────────────┤
+│  TOOLS         Node, Express, PostgreSQL                     │
+├──────────────────────────────────────────────────────────────┤
+│  PROMPT        build a small production API for this         │
+│                purpose                                       │
+└──────────────────────────────────────────────────────────────┘
+```
 
-The nice thing is that each layer can change without touching the others. If I swap Node and PostgreSQL for Python and MongoDB, the prompt, the philosophy and the finish line stay exactly as they were. The agent adjusts because I moved one wall of the room, and the rest of the room is still there.
+The nice thing is that each layer can change without touching the others. If I swap Node and PostgreSQL for Python and MongoDB, the prompt, the philosophy and the goal stay exactly as they were. The agent adjusts because I moved one wall of the room, and the rest of the room is still there.
 
 ## Constraints you can keep
 
