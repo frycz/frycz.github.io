@@ -25,7 +25,7 @@ For most of computing history, we told machines exactly what to do, step by step
 
 Agents don't work this way, and trying to make them do so is exhausting. We can't list every step for "build me a small web app for tracking my eating habits." There are thousands of steps and we don't know most of them in advance. That's the whole reason we asked the agent to do it for us :)
 
-What you can do is shape the room the agent works in. Tell it to use React and Tailwind, and Vue, Angular and hand-written CSS are closed off without mentioning them. Tell it the API should be stateless and follow REST, and you've ruled out a huge number of designs it might have wandered into. This way we don't tell the agent where to go; we build roads for it.
+What you can do is shape the room the agent works in. Asking for React and Tailwind closes Vue, Angular and hand-written CSS off without mentioning them. Tell it the API should be stateless and follow REST, and you've ruled out a huge number of designs it might have wandered into. This way we tell the agent where to go, not how.
 
 I find this mental model comfortable to work with. I stop trying to predict every move and start asking a different question: what does the space look like where only good answers fit?
 
@@ -33,7 +33,7 @@ I find this mental model comfortable to work with. I stop trying to predict ever
 
 A language model works on likelihoods. Ask it something vague and it gives the most average answer it can find, because the average is the safest bet when it knows nothing about what you want to create. That's why "write a blog post about productivity" gets you the same post everyone has already read.
 
-Every detail you add shifts those odds. When you name your audience, the average moves. Hand it an example of your writing and it moves again. Say which words you hate and a whole family of bland answers drops out. I picture it as a cloud of possible outputs that gets smaller and denser with each thing I add, until most of what's left is close to what I had in my head.
+Every detail you add shifts those odds. When you name your audience, the average moves. Handing it an example of your writing moves it again. Say which words you hate and a whole family of bland answers drops out. I picture it as a cloud of possible outputs that gets smaller and denser with each thing I add, until most of what's left is close to what I had in my head.
 
 So the rule I keep coming back to is simple. The more specific the limits, the more likely the result is the one you wanted. A one-line prompt is a lottery ticket, but a prompt plus a tool list plus a style guide plus a clear finish line is closer to a recipe.
 
