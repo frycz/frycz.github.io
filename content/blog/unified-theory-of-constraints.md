@@ -71,7 +71,7 @@ This is where the idea gets practical, and where I think most of us are wasting 
 
 If constraints are what make the results good, then they're worth more than the results. A good set of API guidelines works for the next ten projects. A style guide I spent an evening on improves every piece of writing after it. Yet most of this work lives in a chat window and disappears when we close the tab. Next week we type a weaker version from memory.
 
-Constraints should be treated like any other thing we build carefully. You write one down. You try it on real tasks and watch where the agent ignores it or misreads it. You fix the wording. You keep it somewhere you can find it, and you share it with people who do similar work. Someone else takes your guidelines, changes two lines for their team, and passes that version on.
+Constraints should be treated like any other thing we build. You write one down. You try it on real tasks and watch where the agent ignores it or misreads it. You fix the wording. You keep it somewhere you can find it, and you share it with people who do similar work. Someone else takes your guidelines, changes two lines for their team, and passes that version on.
 
 Software engineers already do this with code: nobody writes their own date library; they pull in one that thousands of people have tested. I'd like the same for the things that shape agents. Picture starting a project by picking a tested set of architecture guidelines, a writing voice you trust, and a short tool list, instead of starting from a blank prompt box and hoping.
 
