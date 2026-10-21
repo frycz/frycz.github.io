@@ -21,11 +21,11 @@ Working with an AI model feels like that. The painter starts with an empty canva
 
 ## From instructing to designing space
 
-For most of computing history, we told machines exactly what to do, step by step: load this, compare that, add these two numbers, you get the idea. The computer did nothing we didn't spell out (in a general sense).
+For most of computing history, we told machines exactly what to do, step by step: load this, compare that, you get the idea. The computer did nothing we didn't spell out (in a general sense).
 
-Agents don't work this way, and trying to make them do so is exhausting. We can't list every step for "build me a small web app for tracking my eating habits." There are thousands of steps and we don't know most of them in advance. That's the whole reason we asked the agent to do it for us :)
+Agents don't work this way, and trying to make them do so is exhausting. We can't list every step for "build a small web app for tracking eating habits." There are multiple steps and we don't know most of them in advance. That's the whole reason we asked the agent to do it for us :)
 
-What you can do is shape the room the agent works in. Asking for React and Tailwind closes Vue, Angular and hand-written CSS off without mentioning them. Tell it the API should be stateless and follow REST, and you've ruled out a huge number of designs it might have wandered into. This way we tell the agent where to go, not how.
+What you can do is shape the room the agent works in. Asking for React and Tailwind closes Vue, Angular and hand-written CSS off without mentioning them. When you tell it the API should be stateless and follow REST, you rule out a huge number of designs it might have wandered into. This way we tell the agent where to go, not how.
 
 I find this mental model comfortable to work with. I stop trying to predict every move and start asking a different question: what does the space look like where only good answers fit?
 
