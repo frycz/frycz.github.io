@@ -91,6 +91,35 @@ const IndexPage = ({ data }) => {
           <Link to="/blog">Read all posts →</Link>
         </p>
       </section>
+
+      <section aria-labelledby="links-heading">
+        <h2 id="links-heading">Links</h2>
+        <ul className="inline">
+          <li>
+            Social: <a href="https://github.com/frycz">GitHub</a> ⋅{" "}
+            <a href="https://www.linkedin.com/in/adam-sawicki-a3873788/">
+              LinkedIn
+            </a>
+          </li>
+          <li>
+            Apps: <a href="https://geotraders.app/">GeoTraders</a> ⋅{" "}
+            <a href="https://play.google.com/store/apps/details?id=com.frycz.simplecalories">
+              Simple Calories
+            </a>
+          </li>
+          <li>
+            Packages: <a href="https://pypi.org/user/frycz/">PyPI packages</a> ⋅{" "}
+            <a href="https://crates.io/users/frycz">Cargo packages</a> ⋅{" "}
+            <a href="https://www.npmjs.com/~frycz">NPM packages</a>
+          </li>
+          <li>
+            A song:{" "}
+            <a href="https://www.youtube.com/watch?v=t6wDXcNWb54">
+              End of Summer
+            </a>
+          </li>
+        </ul>
+      </section>
     </Layout>
   );
 };
