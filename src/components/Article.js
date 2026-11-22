@@ -21,7 +21,41 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
   const [hasToc, setHasToc] = useState(false);
   const [tocOpen, setTocOpen] = useState(true);
   const [animated, setAnimated] = useState(false);
+  // Below md-reader's rail breakpoint there is no column to give the rail, so the same button
+  // opens it as a panel over the article instead. False through the server render and the first
+  // paint, which is what keeps a narrow screen from flashing the panel before it is measured.
+  const [narrow, setNarrow] = useState(false);
   const toggleToc = useCallback(() => setTocOpen((open) => !open), []);
+
+  // The breakpoint is md-reader's: at 1100px it drops the rail's column. Crossing it either way
+  // resets the switch to what that width wants — open beside the text, closed over it.
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 1100px)");
+    const apply = () => {
+      setNarrow(query.matches);
+      setTocOpen(!query.matches);
+    };
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
+
+  // A panel over the article is in the way until it is dismissed, so picking a section closes
+  // it. Beside the text it is not in the way, and stays as the reader left it.
+  const closeIfPanel = useCallback(() => {
+    if (narrow) setTocOpen(false);
+  }, [narrow]);
+
+  // The two ways out of a panel that an overlay is expected to offer. The scrim below is the
+  // third, and the bar's button is still there as the fourth.
+  useEffect(() => {
+    if (!narrow || !tocOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setTocOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [narrow, tocOpen]);
 
   // The rail only knows whether it has anything to list once it has read the headings, so it
   // arrives a moment after the page does. That arrival is not a change anyone asked for, and
@@ -44,12 +78,23 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
       <SiteHeader toc={hasToc ? { open: tocOpen, toggle: toggleToc } : null} />
 
       <div
-        className={`mdr-layout${animated ? " toc-animated" : ""}`}
+        className={`mdr-layout${animated ? " toc-animated" : ""}${narrow ? " toc-panel" : ""}`}
         data-toc={tocOpen ? "on" : "off"}
       >
+        {narrow && tocOpen && (
+          <button
+            type="button"
+            className="toc-scrim"
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={toggleToc}
+          />
+        )}
+
         <Reader
           html={html}
           onToc={setHasToc}
+          onNavigate={closeIfPanel}
           head={
             <Header title={title} date={date}>
               {back && <p className="header-nav">{back}</p>}

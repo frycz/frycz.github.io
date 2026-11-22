@@ -5,15 +5,17 @@ import { getSettings, subscribeSettings } from "../lib/reader-settings";
 // An article: the rendered markdown plus the reading layer md-reader puts on top of it.
 // Both of md-reader's layout columns come from here, because the contents rail is a sibling
 // of the text column rather than something inside it.
-const Reader = ({ html, head, foot, onToc }) => {
+const Reader = ({ html, head, foot, onToc, onNavigate }) => {
   const contentRef = useRef(null);
   const tocRef = useRef(null);
   const [hasToc, setHasToc] = useState(false);
 
-  // Only the article's html decides whether the reader remounts. onToc is a way to report the
-  // result upward, so it rides along in a ref instead of becoming a remount trigger.
+  // Only the article's html decides whether the reader remounts. onToc and onNavigate are ways
+  // to report upward, so they ride along in refs instead of becoming remount triggers.
   const onTocRef = useRef(onToc);
   onTocRef.current = onToc;
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
 
   useEffect(() => {
     const reader = mountReader({
@@ -22,7 +24,10 @@ const Reader = ({ html, head, foot, onToc }) => {
       tocDepth: getSettings().tocDepth,
       // The bar is sticky, so a heading counts as current once it clears the bar's height.
       offset: () => headerHeight() + 24,
-      onNavigate: (id) => window.history.replaceState(null, "", `#${encodeURIComponent(id)}`),
+      onNavigate: (id) => {
+        window.history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+        onNavigateRef.current?.(id);
+      },
     });
 
     // The rail is worth its column only once a post has something to navigate. The bar needs

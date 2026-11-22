@@ -75,6 +75,52 @@ test.describe("Article reader", () => {
   });
 });
 
+// Below md-reader's rail breakpoint there is no column for the contents, so the same button
+// opens them over the article instead.
+test.describe("Contents on a narrow screen", () => {
+  test.use({ viewport: { width: 390, height: 780 } });
+
+  test("the button opens the contents over the article and a section closes them", async ({ page }) => {
+    await page.goto(POST);
+
+    const toggle = page.getByRole("button", { name: /toggle table of contents/i });
+    const rail = page.locator(".mdr-toc");
+    // The rail costs the article its width here, so it starts out of the way.
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(rail).toBeHidden();
+
+    await toggle.click();
+    await expect(rail).toBeVisible();
+    // Over the article rather than beside it: the sheet has the window's full width.
+    const box = await rail.boundingBox();
+    expect(box.width).toBe(390);
+
+    const link = rail.locator("a[data-target]").nth(1);
+    const target = await link.getAttribute("data-target");
+    await link.click();
+
+    await expect(rail).toBeHidden();
+    await expect(page.locator(`#${target}`)).toBeInViewport();
+  });
+
+  test("tapping the article and pressing Escape both close the contents", async ({ page }) => {
+    await page.goto(POST);
+
+    const toggle = page.getByRole("button", { name: /toggle table of contents/i });
+    const rail = page.locator(".mdr-toc");
+
+    await toggle.click();
+    await expect(rail).toBeVisible();
+    await page.locator(".toc-scrim").click({ position: { x: 120, y: 500 } });
+    await expect(rail).toBeHidden();
+
+    await toggle.click();
+    await expect(rail).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(rail).toBeHidden();
+  });
+});
+
 // A synced article: its code blocks carry region markers that the markdown renderer knows nothing
 // about, so the folds are made in the browser.
 test.describe("Folded code regions", () => {

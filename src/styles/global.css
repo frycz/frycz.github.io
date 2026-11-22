@@ -205,6 +205,79 @@ a:focus-visible {
   color: var(--fg-muted);
 }
 
+/* ---------- the contents rail on a narrow screen ---------- */
+
+/* md-reader takes the rail's column away below 1100px, because a column that narrow costs the
+   article more width than it gives back. The contents are still worth having there, so the
+   button opens them as a sheet under the bar instead: over the article rather than beside it,
+   which is the only place left for them. Article.js adds .toc-panel once it has measured the
+   window, so this never applies to a first paint that has not been measured yet.
+
+   The rail keeps its zero-width column throughout — the sheet is positioned out of flow, so
+   the text underneath keeps the whole window and nothing reflows when it opens. */
+.mdr-layout.toc-panel[data-toc="on"] > .mdr-toc:not([hidden]) {
+  display: block;
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  z-index: 15;
+  height: auto;
+  max-height: calc(100svh - var(--header-h) - 24px);
+  padding: 12px 16px 20px;
+  /* A layer above the page rather than more of it: on a dark theme a sheet in the page's own
+     background has nothing but its border to say where it ends. */
+  background: var(--bg-elev);
+  border-left: none;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 14px 28px -14px rgb(0 0 0 / 0.45);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The sheet drops from under the bar rather than appearing on top of the text. */
+.toc-panel[data-toc="on"] > .mdr-toc {
+  animation: toc-panel-enter 180ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes toc-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Closed, the sheet is gone outright: the fade that the desktop rail closes with belongs to a
+   column narrowing, and there is no column here to narrow. */
+.mdr-layout.toc-panel[data-toc="off"] > .mdr-toc {
+  display: none;
+}
+
+/* The headings are sized to the rail's column, which the sheet does not have. */
+.toc-panel > .mdr-toc .mdr-toc-head,
+.toc-panel > .mdr-toc .mdr-toc-list {
+  width: auto;
+}
+
+/* Tapping the article closes the sheet, which is what an overlay is expected to do. It is only
+   a hit area: the bar's button and Escape are the ways out that announce themselves. */
+.toc-scrim {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 14;
+  padding: 0;
+  border: none;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  cursor: default;
+}
+
 /* A reader who asked for less movement gets the same states, arrived at instantly. */
 @media (prefers-reduced-motion: reduce) {
   .mdr-layout,
@@ -218,7 +291,8 @@ a:focus-visible {
 
   .mdr-main,
   .site-footer,
-  .mdr-toc:not([hidden]) {
+  .mdr-toc:not([hidden]),
+  .toc-panel[data-toc="on"] > .mdr-toc {
     animation: none;
   }
 }
