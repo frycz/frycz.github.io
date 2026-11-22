@@ -15,6 +15,11 @@
   --line-height: 1.7;
   --base-spacing: 1.25rem;
 
+  /* The space between the prose and anything beside it: .mdr-main's side padding, the bar's
+     own inset, and — now that the rail sits against the text rather than against the window —
+     the gap the rail opens into. One value, because they all have to be the same one. */
+  --text-gutter: 40px;
+
   /* One size for everything in the bar: the name, the links and the theme toggle. */
   --bar-font-size: 16px;
 
@@ -26,6 +31,14 @@
   --muted: var(--fg-muted);
   --rule: var(--border);
   --link: var(--accent);
+}
+
+/* Narrow enough that the article needs the whole window, which is md-reader's own breakpoint
+   for the same thing: see .mdr-main in its layout.css. */
+@media (max-width: 760px) {
+  :root {
+    --text-gutter: 16px;
+  }
 }
 
 * {
@@ -111,28 +124,35 @@ a:hover {
 
 /* ---------- the bar ---------- */
 
-/* The bar is as wide as the window, but what is in it lines up with the article: the name
-   starts where the prose starts and the last control ends where the prose ends, so the page
-   reads as one column with a bar on top rather than as a bar the column happens to sit under.
+/* The bar is as wide as the window, but what is in it spans the block below it: the name
+   starts where the prose starts, and the last control ends where that block ends — the prose's
+   right edge on its own, or the rail's once the rail is open. So the bar widens as the rail
+   opens, and the page reads as one centred block with a bar on top.
 
    md-reader's own bar is a flex row with a gutter of its own, which is what the grid and the
-   padding here replace. The second column stands in for the contents rail, so the bar's
-   contents are centred in the same space the text is — and move with it when the rail opens.
-   The rail's own column transitions over the same 220ms, so the two travel together. */
+   padding here replace. The template is the layout's below, so the bar's contents land on the
+   same two columns the text and the rail do, and the rail's column transitions over the same
+   220ms, so the two travel together. */
 .site-header {
-  --bar-gutter: 40px;
   --bar-rail: 0px;
+  /* Ends where the text does, until there is a rail to end at instead. */
+  --bar-pad-end: var(--text-gutter);
 
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--bar-rail);
-  /* md-reader's row gap would sit between the bar's column and the rail's, which is half a gap
-     of misalignment against a layout grid that has none. */
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, calc(var(--content-width) + var(--text-gutter) * 2))
+    var(--bar-rail)
+    minmax(0, 1fr);
+  /* md-reader's row gap would sit between the bar's columns, which is a gap of misalignment
+     against a layout grid that has none. */
   gap: 0;
   padding: 0;
 }
 
 .site-header[data-toc="on"] {
   --bar-rail: var(--toc-w);
+  --bar-pad-end: 0px;
 }
 
 /* Only once the page has settled, and for the same reason the rail is: see Article.js. */
@@ -140,14 +160,16 @@ a:hover {
   transition: grid-template-columns 220ms ease;
 }
 
-/* The prose's own box: its width while there is room for it, and the window minus .mdr-main's
-   gutters once there is not. Centred, which is where the text column is too. */
+/* The text column and the rail's, which together are the block the page is centred on. The
+   padding is .mdr-main's, so the name sits on the prose's own edge. */
 .site-header-inner {
+  grid-column: 2 / 4;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: min(var(--content-width), 100% - var(--bar-gutter) * 2);
-  margin-inline: auto;
+  padding-inline: var(--text-gutter) var(--bar-pad-end);
+  /* What the contents button hangs from: see .toc-toggle. */
+  position: relative;
 }
 
 /* md-reader insets the title inside its own gutter. Here the gutter is the article's, and the
@@ -157,17 +179,11 @@ a:hover {
 }
 
 /* Below md-reader's rail breakpoint the rail has no column to leave room for: it opens over
-   the article instead, and the bar has the window to itself. */
+   the article instead, and the bar ends where the text does. */
 @media (max-width: 1100px) {
   .site-header[data-toc="on"] {
     --bar-rail: 0px;
-  }
-}
-
-/* The gutters .mdr-main narrows to when the article needs the whole window. */
-@media (max-width: 760px) {
-  .site-header {
-    --bar-gutter: 16px;
+    --bar-pad-end: var(--text-gutter);
   }
 }
 
@@ -252,6 +268,28 @@ a:focus-visible {
 
 /* ---------- the contents rail ---------- */
 
+/* md-reader hangs the rail off the window's right edge and lets the text centre in what is
+   left, which on a wide screen opens a stretch of nothing between the two. Here the text and
+   the rail are one block, centred together: the gutters are the grid's outer columns, the text
+   column is exactly as wide as it needs to be, and the rail sits against it with .mdr-main's
+   own padding as the gap. Closing the rail takes its column out of the block, and what is left
+   — the text — recentres.
+
+   The track numbers md-reader assigns still hold: .mdr-main is column 2 and .mdr-toc column 3,
+   which is why the gutters are the columns on either side of them rather than margins. */
+.mdr-layout {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, calc(var(--content-width) + var(--text-gutter) * 2))
+    var(--mdr-col-toc)
+    minmax(0, 1fr);
+}
+
+/* The gutter is the one in --text-gutter, which the bar and the grid are measured from too. */
+.mdr-main {
+  padding-inline: var(--text-gutter);
+}
+
 /* md-reader takes the rail out of the grid outright when it is switched off. Here it closes
    instead: the column narrows to nothing and the rail fades as it goes, so the text column
    grows into the space rather than jumping into it. The rail has to keep its box through all
@@ -292,11 +330,21 @@ a:focus-visible {
 
    Out of flow, so the text column keeps the whole window either way, and on a surface of its
    own rather than the page's, so it stays legible over prose it happens to sit on. */
+/* It hangs off the end of the bar's row, which is already the block's right edge in both
+   states — the rail's while the rail is open, the prose's while it is not. Measuring that edge
+   again here would mean repeating the block's arithmetic in a box that cannot do it: the width
+   is written in ch, and ch is read in each element's own font, so this button's UI font would
+   put it some thirty pixels off the column it is supposed to line up with.
+
+   The bar is sticky, so the button stays under it as the page scrolls, and the bar's stacking
+   context sits above the sheet, so the button floats over the contents rather than behind. */
 .toc-toggle {
-  position: fixed;
-  top: calc(var(--header-h) + 10px);
-  right: 10px;
-  z-index: 25;
+  position: absolute;
+  top: calc(100% + 15px);
+  /* An absolute offset is measured from the row's padding box, which is its full width. The
+     controls inside the row stop one --bar-pad-end short of that, and the button stops with
+     them: on the rail's edge while the rail is open, on the prose's while it is not. */
+  right: var(--bar-pad-end);
   background: var(--bg-elev);
   border-color: var(--border);
   box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.4);
@@ -507,7 +555,7 @@ ul.inline {
    width, which is how md-reader aligns everything else in that column. */
 .site-footer {
   grid-column: 2;
-  padding: var(--base-spacing) 40px calc(var(--base-spacing) * 2);
+  padding: var(--base-spacing) var(--text-gutter) calc(var(--base-spacing) * 2);
   border-top: 1px solid var(--rule);
 }
 
@@ -527,12 +575,6 @@ ul.inline {
 
 .site-footer-row .build-date {
   font-size: 0.5rem;
-}
-
-@media (max-width: 760px) {
-  .site-footer {
-    padding-inline: 16px;
-  }
 }
 
 /* ---------- lists of posts and projects ---------- */

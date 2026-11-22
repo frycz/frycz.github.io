@@ -4,7 +4,6 @@ import SiteHeader from "./SiteHeader";
 import Header from "./Header";
 import Footer from "./Footer";
 import Reader from "./Reader";
-import TocToggle from "./TocToggle";
 import "../styles/global.css";
 
 // A post or a project: the same page as the markdown viewer, with the site's bar on top.
@@ -70,9 +69,11 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
 
   return (
     <>
-      <SiteHeader railOpen={hasToc && tocOpen} animated={animated} />
-
-      {hasToc && <TocToggle open={tocOpen} onToggle={toggleToc} />}
+      <SiteHeader
+        railOpen={hasToc && tocOpen}
+        animated={animated}
+        onToggleRail={hasToc ? toggleToc : undefined}
+      />
 
       <div
         className={`mdr-layout${animated ? " toc-animated" : ""}${narrow ? " toc-panel" : ""}`}

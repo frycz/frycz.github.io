@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import SiteHeader from "../SiteHeader";
 
 jest.mock("../ThemeToggle", () => () => <button>Theme Toggle</button>);
@@ -24,12 +24,25 @@ describe("SiteHeader", () => {
     expect(screen.getByRole("link", { name: "RSS" })).toHaveAttribute("href", "/rss.xml");
   });
 
-  // The contents switch floats under the bar now, so the theme is the only setting in it.
+  // A page with no rail has nothing to switch, so the theme is the only control there.
   it("carries the theme toggle and nothing else", () => {
     render(<SiteHeader />);
     expect(screen.getByText("Theme Toggle")).toBeInTheDocument();
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /table of contents/i })).not.toBeInTheDocument();
+  });
+
+  // The switch floats under the bar rather than sitting in it, but it hangs off the end of the
+  // bar's row, which is the edge it has to line up with — so this is where it is rendered.
+  it("hangs the contents switch off its row when there is a rail to switch", () => {
+    const onToggleRail = jest.fn();
+    render(<SiteHeader railOpen onToggleRail={onToggleRail} />);
+
+    const button = screen.getByRole("button", { name: /toggle table of contents/i });
+    expect(button).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(button);
+    expect(onToggleRail).toHaveBeenCalledTimes(1);
   });
 
   // The bar's contents line up with the article's text, so the bar has to leave room for the

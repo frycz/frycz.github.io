@@ -124,33 +124,34 @@ test.describe("Theme toggle", () => {
     expect(bar).toBe(rail);
   });
 
-  // Closing the rail is the reader's call, and the text column takes the space back.
+  // Closing the rail is the reader's call, and the text recentres on the space it leaves.
   test("the floating contents button opens and closes the rail", async ({ page }) => {
     await page.goto("/blog/triangle-of-success");
 
     const button = page.getByRole("button", { name: /toggle table of contents/i });
     const rail = page.locator(".mdr-toc");
     const railWidth = () => rail.evaluate((el) => el.getBoundingClientRect().width);
-    // The prose itself is capped at --content-width, so what the rail gives back shows up in
-    // the column around it rather than in the line length.
-    const columnWidth = () =>
-      page.locator(".mdr-main").evaluate((el) => el.getBoundingClientRect().width);
+    // The text column keeps its measure either way — it is the block around it that changes —
+    // so what the rail gives back shows up as the column moving, not as longer lines.
+    const columnLeft = () =>
+      page.locator(".mdr-main").evaluate((el) => el.getBoundingClientRect().left);
 
     await expect(button).toHaveAttribute("aria-expanded", "true");
     await expect(rail).toBeVisible();
     await expect.poll(railWidth).toBeGreaterThan(0);
-    const openWidth = await columnWidth();
+    const openLeft = await columnLeft();
 
     await button.click();
     await expect(button).toHaveAttribute("aria-expanded", "false");
     // The column closes over the rail rather than the rail leaving the page outright, so what
     // settles is its width, not whether the element is still there.
     await expect.poll(railWidth).toBe(0);
-    expect(await columnWidth()).toBeGreaterThan(openWidth);
+    // Half the rail's width, shared out between the gutters on either side of the block.
+    await expect.poll(columnLeft).toBeGreaterThan(openLeft);
 
     await button.click();
     await expect(button).toHaveAttribute("aria-expanded", "true");
-    await expect.poll(columnWidth).toBe(openWidth);
+    await expect.poll(columnLeft).toBe(openLeft);
     expect(await railWidth()).toBeGreaterThan(0);
   });
 
