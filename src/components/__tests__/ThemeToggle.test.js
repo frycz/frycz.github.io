@@ -40,26 +40,37 @@ describe("ThemeToggle", () => {
     render(<ThemeToggle />);
 
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(screen.getByText("Light mode")).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
   });
 
   it("follows the system preference until a choice is made", () => {
     mockSystemDark(true);
     render(<ThemeToggle />);
 
-    expect(screen.getByText("Light mode")).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
     // Following the system means claiming neither theme on the document.
     expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+  });
+
+  // Which icon shows is the stylesheet's call, read off the theme the document is already
+  // wearing. That only works if both are in the markup for it to choose between.
+  it("carries both icons so the stylesheet can pick without waiting for hydration", () => {
+    const { container } = render(<ThemeToggle />);
+
+    expect(container.querySelector(".theme-icon-moon")).toBeInTheDocument();
+    expect(container.querySelector(".theme-icon-sun")).toBeInTheDocument();
+    // No label to swap means nothing for the bar to reflow around.
+    expect(screen.getByRole("button")).toHaveTextContent("");
   });
 
   it("toggles the theme when clicked", () => {
     updateSettings({ theme: "light" });
     render(<ThemeToggle />);
-    expect(screen.getByText("Dark mode")).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(screen.getByRole("button"));
 
-    expect(screen.getByText("Light mode")).toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(storedTheme()).toBe("dark");
   });

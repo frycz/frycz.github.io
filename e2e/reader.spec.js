@@ -91,9 +91,11 @@ test.describe("Contents on a narrow screen", () => {
 
     await toggle.click();
     await expect(rail).toBeVisible();
-    // Over the article rather than beside it: the sheet has the window's full width.
+    // Over the article rather than beside it, hung from the right under the button, and narrow
+    // enough that the article is still visibly there behind it.
     const box = await rail.boundingBox();
-    expect(box.width).toBe(390);
+    expect(box.width).toBeCloseTo(390 * 0.6, 0);
+    expect(box.x + box.width).toBeCloseTo(390, 0);
 
     const link = rail.locator("a[data-target]").nth(1);
     const target = await link.getAttribute("data-target");

@@ -27,12 +27,33 @@ test.describe("Theme toggle", () => {
   });
 
   test("clicking changes the theme", async ({ page }) => {
-    const initial = await toggle(page).textContent();
+    const initial = await toggle(page).getAttribute("aria-pressed");
 
     await toggle(page).click();
 
-    expect(await toggle(page).textContent()).not.toBe(initial);
+    expect(await toggle(page).getAttribute("aria-pressed")).not.toBe(initial);
     await expect(page.locator("html")).toHaveAttribute("data-theme", /^(light|dark)$/);
+  });
+
+  // The icon is chosen by the stylesheet from the theme the bootstrap script already put on the
+  // document, so the button is correct in the first paint rather than corrected after hydration.
+  test("the icon matches the theme from the first paint", async ({ page }) => {
+    await page.evaluate(
+      ([key, value]) => localStorage.setItem(key, value),
+      [SETTINGS_KEY, JSON.stringify({ theme: "dark" })],
+    );
+    await page.goto("/", { waitUntil: "commit" });
+
+    const sun = page.locator(".theme-icon-sun");
+    const moon = page.locator(".theme-icon-moon");
+    // A dark page offers the way back to light, and only that. Checked before the bundles are
+    // asked for, which is exactly when the old label was still showing the wrong word.
+    await expect(sun).toBeVisible();
+    await expect(moon).toBeHidden();
+
+    await toggle(page).click();
+    await expect(moon).toBeVisible();
+    await expect(sun).toBeHidden();
   });
 
   test("clicking twice returns to where it started", async ({ page }) => {
