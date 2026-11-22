@@ -49,12 +49,19 @@ test.describe("Navigation", () => {
     expect(await animation(".mdr-header")).toBe("none");
 
     // The column the click lands on is a new element, so it has its own entrance to make.
+    // Watched rather than sampled: the entrance lasts 260ms, and a long post can take longer
+    // than that to render, which would leave a sampled opacity already settled at 1.
+    await page.evaluate(() => {
+      window.__entered = new Promise((resolve) => {
+        document.addEventListener("animationstart", (e) => {
+          if (e.animationName === "page-enter" && e.target.classList.contains("mdr-main")) resolve(true);
+        });
+      });
+    });
+
     await page.locator(".blog-post-title a").first().click();
     await expect(page).toHaveURL(/\/blog\/.+/);
-    const opacity = await page
-      .locator(".mdr-main")
-      .evaluate((el) => parseFloat(getComputedStyle(el).opacity));
-    expect(opacity).toBeLessThan(1);
+    expect(await page.evaluate(() => window.__entered)).toBe(true);
     await expect.poll(() =>
       page.locator(".mdr-main").evaluate((el) => parseFloat(getComputedStyle(el).opacity)),
     ).toBe(1);

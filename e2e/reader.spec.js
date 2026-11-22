@@ -74,3 +74,55 @@ test.describe("Article reader", () => {
     await expect(lightbox).toBeHidden();
   });
 });
+
+// A synced article: its code blocks carry region markers that the markdown renderer knows nothing
+// about, so the folds are made in the browser.
+test.describe("Folded code regions", () => {
+  const POST_WITH_REGIONS = "/blog/modular-agent";
+  const folded = ".code-block:has(details.code-region)";
+
+  test("a block with region markers arrives folded", async ({ page }) => {
+    await page.goto(POST_WITH_REGIONS);
+
+    const block = page.locator(folded).first();
+    await expect(block).toBeVisible();
+    const region = block.locator("details.code-region").first();
+    await expect(region).not.toHaveAttribute("open", /.*/);
+    await expect(region.locator("summary")).toContainText("Needed from earlier sections");
+    // The markers themselves are the fold, not something left in the code.
+    await expect(block.locator("pre")).not.toContainText("# endregion");
+  });
+
+  test("the fold-all button opens and closes every region of its block", async ({ page }) => {
+    await page.goto(POST_WITH_REGIONS);
+
+    const block = page.locator(folded).first();
+    const fold = block.locator(".fold-btn").first();
+    await expect(fold).toHaveText("Expand all");
+
+    await fold.click();
+    await expect(fold).toHaveText("Collapse all");
+    const open = await block.locator("details.code-region").evaluateAll((ds) => ds.every((d) => d.open));
+    expect(open).toBe(true);
+
+    await fold.click();
+    await expect(fold).toHaveText("Expand all");
+  });
+
+  test("highlighting colors the folded code without flattening the fold", async ({ page }) => {
+    await page.goto(POST_WITH_REGIONS);
+
+    const block = page.locator(folded).first();
+    await expect(block.locator("code.hljs")).toBeVisible();
+    await block.locator(".fold-btn").first().click();
+    // The region still exists, and the code inside it came out as tokens rather than plain text.
+    await expect(block.locator("details.code-region .code-part .hljs-keyword").first()).toBeVisible();
+  });
+
+  test("the copy button has the code as it was written", async ({ page }) => {
+    await page.goto(POST_WITH_REGIONS);
+
+    const block = page.locator(folded).first();
+    await expect(block).toHaveAttribute("data-code", /# region/);
+  });
+});

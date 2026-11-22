@@ -101,6 +101,24 @@ Your content here...
 
 The post will automatically appear on the blog page and be accessible at `/blog/your-post-slug`.
 
+## Articles Synced From Another Repository
+
+Some posts are written and kept elsewhere, and this repository holds a generated copy.
+Those copies carry a `source` and a `generated` field in their frontmatter: edit the source, not the copy.
+
+The manifest is the `ARTICLES` list at the top of [scripts/sync-articles.js](scripts/sync-articles.js),
+with one entry per article: the source path relative to this repository, the slug, the title, the publication date and the description used by the RSS feed.
+
+- `npm run sync:articles` rewrites the copies from their sources.
+- `npm run sync:articles -- --check` reports copies that have fallen behind, and exits non-zero.
+- `/publish-article` runs the sync and then reads the result for prose that only made sense in the source repository.
+
+The copies are committed, because the build on CI checks out this repository alone and cannot reach the sources.
+A source that is not on the machine is skipped rather than treated as an error, so the script is safe to run anywhere.
+
+Code blocks in a synced article may carry `# region <name>` and `# endregion` marker lines.
+These are folded away in the browser by `md-reader`, so a long block of definitions arrives collapsed under its name.
+
 ## Customization
 
 ### Update Personal Information

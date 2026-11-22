@@ -20,6 +20,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+# The shared commands under .claude/ are tracked; the local permissions are this machine's.
+.claude/settings.local.json
 *.swp
 *.swo
 *~

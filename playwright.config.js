@@ -23,6 +23,7 @@ module.exports = defineConfig({
     command: "npm run build && npm run serve",
     url: "http://localhost:9000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    // A full Gatsby build, and one of the posts is long enough to make it several minutes.
+    timeout: 480000,
   },
 });

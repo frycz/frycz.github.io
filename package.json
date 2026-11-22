@@ -9,6 +9,7 @@
     "build": "gatsby build",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
+    "sync:articles": "node scripts/sync-articles.js",
     "postinstall": "patch-package",
     "deploy": "gatsby build && gh-pages -d public",
     "test": "jest",
