@@ -37,9 +37,9 @@ describe("Header", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
-  it("title links to homepage", () => {
+  // The way home is in the site bar above this block, so the page's own title is not a link.
+  it("renders the title as plain text", () => {
     render(<Header title="Test Title" />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });

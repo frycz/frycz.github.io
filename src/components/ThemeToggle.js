@@ -1,41 +1,29 @@
 import React, { useEffect, useState } from "react";
+import { onSystemThemeChange, resolvedTheme } from "md-reader";
+import { getSettings, initSettings, subscribeSettings, updateSettings } from "../lib/reader-settings";
 
+// Until the first click the theme follows the OS. Clicking picks one explicitly, and that
+// choice sticks: the same two states the site has always had.
 const ThemeToggle = () => {
   const [theme, setTheme] = useState(null);
 
   useEffect(() => {
-    // Get saved theme or use system preference
-    const savedTheme = localStorage.getItem("theme-preference");
-    if (savedTheme === "light" || savedTheme === "dark") {
-      document.documentElement.setAttribute("data-theme", savedTheme);
-      setTheme(savedTheme);
-    } else {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      setTheme(systemTheme);
-    }
+    initSettings();
+    setTheme(resolvedTheme());
 
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e) => {
-      if (!localStorage.getItem("theme-preference")) {
-        const newTheme = e.matches ? "dark" : "light";
-        setTheme(newTheme);
-        document.documentElement.removeAttribute("data-theme");
-      }
+    // While no explicit choice has been made, the OS is still in charge of the label.
+    const stopWatching = onSystemThemeChange(() => {
+      if (getSettings().theme === "system") setTheme(resolvedTheme());
+    });
+    const unsubscribe = subscribeSettings(() => setTheme(resolvedTheme()));
+
+    return () => {
+      stopWatching();
+      unsubscribe();
     };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme-preference", newTheme);
-  };
+  const toggleTheme = () => updateSettings({ theme: theme === "dark" ? "light" : "dark" });
 
   return (
     <button

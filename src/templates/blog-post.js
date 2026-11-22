@@ -1,30 +1,18 @@
 import React from "react";
-import { Link, graphql } from "gatsby";
-import Layout from "../components/Layout";
+import { graphql } from "gatsby";
+import Article from "../components/Article";
 
 const BlogPostTemplate = ({ data }) => {
   const post = data.markdownRemark;
 
   return (
-    <Layout
+    <Article
+      html={post.html}
       title={post.frontmatter.title}
       date={post.frontmatter.date}
-      headerNav={
-        <p className="header-nav">
-          <Link to="/blog">← Back to all posts</Link>
-        </p>
-      }
-    >
-      <article>
-        <div dangerouslySetInnerHTML={{ __html: post.html }} />
-      </article>
-
-      <hr />
-
-      <nav style={{ marginTop: "2rem" }}>
-        <Link to="/blog">← Back to all posts</Link>
-      </nav>
-    </Layout>
+      backTo="/blog"
+      backLabel="Back to all posts"
+    />
   );
 };
 

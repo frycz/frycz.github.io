@@ -1,30 +1,18 @@
 import React from "react";
-import { Link, graphql } from "gatsby";
-import Layout from "../components/Layout";
+import { graphql } from "gatsby";
+import Article from "../components/Article";
 
 const ProjectTemplate = ({ data }) => {
   const project = data.markdownRemark;
 
   return (
-    <Layout
+    <Article
+      html={project.html}
       title={project.frontmatter.title}
       date={project.frontmatter.date}
-      headerNav={
-        <p className="header-nav">
-          <Link to="/projects">← Back to all projects</Link>
-        </p>
-      }
-    >
-      <article>
-        <div dangerouslySetInnerHTML={{ __html: project.html }} />
-      </article>
-
-      <hr />
-
-      <nav style={{ marginTop: "2rem" }}>
-        <Link to="/projects">← Back to all projects</Link>
-      </nav>
-    </Layout>
+      backTo="/projects"
+      backLabel="Back to all projects"
+    />
   );
 };
 

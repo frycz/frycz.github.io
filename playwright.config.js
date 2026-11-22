@@ -10,6 +10,8 @@ module.exports = defineConfig({
   use: {
     baseURL: "http://localhost:9000",
     trace: "on-first-retry",
+    // Wide enough for the contents rail, which is what the site is designed against.
+    viewport: { width: 1440, height: 900 },
   },
   projects: [
     {

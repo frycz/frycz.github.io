@@ -1,37 +1,33 @@
 import React from "react";
-import { Link } from "gatsby";
-import ThemeToggle from "./ThemeToggle";
+import SiteHeader from "./SiteHeader";
 import Header from "./Header";
 import Footer from "./Footer";
 import "../styles/global.css";
 
+// Every page that is not an article: the same bar and the same text column as an article has,
+// without the contents rail. md-reader's grid leaves out the rail column when nothing is in
+// it, so there is no empty gutter to account for here.
 const Layout = ({ children, title, subtitle, date, headerNav }) => {
   return (
-    <div className="page">
-      <div className="topbar container">
-        <div className="toggle-row">
-          <Link to="/">Home</Link>
-          <Link to="/blog">Blog</Link>
-          <Link to="/projects">Projects</Link>
-          <a href="/rss.xml" title="RSS Feed" className="rss-link">RSS</a>
-          <ThemeToggle />
-        </div>
+    <>
+      <SiteHeader />
+
+      <div className="mdr-layout">
+        <main className="mdr-main" id="content" role="main">
+          <Header
+            title={title || "Adam Sawicki — Software Engineer"}
+            subtitle={subtitle}
+            date={date}
+          >
+            {headerNav}
+          </Header>
+
+          {children}
+        </main>
+
+        <Footer />
       </div>
-
-      <Header
-        title={title || "Adam Sawicki — Software Engineer"}
-        subtitle={subtitle}
-        date={date}
-      >
-        {headerNav}
-      </Header>
-
-      <main id="content" className="container" role="main">
-        {children}
-      </main>
-
-      <Footer />
-    </div>
+    </>
   );
 };
 

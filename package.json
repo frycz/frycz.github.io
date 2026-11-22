@@ -21,6 +21,7 @@
     "gatsby-plugin-feed": "^4.25.0",
     "gatsby-source-filesystem": "^4.25.0",
     "gatsby-transformer-remark": "^5.25.0",
+    "md-reader": "github:frycz/md-reader",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

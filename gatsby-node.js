@@ -1,7 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 
-exports.onCreateWebpackConfig = ({ actions }) => {
+exports.onCreateWebpackConfig = ({ actions, stage, loaders }) => {
   const now = new Date();
   const buildDate = now.toLocaleString("sv-SE", { timeZone: "Europe/Warsaw" }).slice(0, 16) + " CET";
   actions.setWebpackConfig({
@@ -11,6 +11,17 @@ exports.onCreateWebpackConfig = ({ actions }) => {
       }),
     ],
   });
+
+  // Diagrams are drawn in the browser only, and mermaid's dependency tree reaches for
+  // node: builtins that the HTML renderer's webpack config does not handle. Keeping it out
+  // of the server bundles costs nothing and avoids the unhandled-scheme failure.
+  if (stage === "build-html" || stage === "develop-html") {
+    actions.setWebpackConfig({
+      module: {
+        rules: [{ test: /node_modules[\\/]mermaid[\\/]/, use: loaders.null() }],
+      },
+    });
+  }
 };
 
 exports.onCreateDevServer = ({ store }) => {

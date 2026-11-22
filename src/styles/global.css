@@ -1,115 +1,160 @@
+@import "md-reader/styles/tokens.css";
+@import "md-reader/styles/markdown.css";
+@import "md-reader/styles/reader.css";
+@import "md-reader/styles/layout.css";
+
+/* The site is the markdown viewer with its own bar on top. Typography, colour, the text
+   column, the contents rail and the grid they sit in all come from md-reader; what is left
+   here is the bar, the footer, and the handful of pages that are not articles. */
 :root {
-  --font-family: "SF Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
-    "Liberation Mono", ui-monospace, "Courier New", monospace;
-  --content-width: 800px;
+  /* The bar's height. md-reader positions the rail from this and keeps anchored headings
+     from landing underneath it, so it has to match .mdr-header's real height. */
+  --header-h: 48px;
+
+  --font-size: 16px;
   --line-height: 1.7;
   --base-spacing: 1.25rem;
 
-  /* Light (default) */
-  --bg: #fafafa; /* near-white */
-  --fg: #141618; /* near-black */
-  --muted: #3d4851;
-  --rule: #dcdfe3;
-  --link: #0b64d6;
-  --selection-bg: #bcd3ff;
-  --selection-fg: #0a0c0f;
+  /* One size for everything in the bar: the name, the links and the theme toggle. */
+  --bar-font-size: 16px;
+
+  /* Prose reads in the viewer's reading font. --font-ui stays what it is in the viewer: the
+     chrome font, worn by the bar, the footer and the contents rail, and nothing else. */
+  --font-body: var(--font-mono);
+
+  /* Older rules in this file still use these names. */
+  --muted: var(--fg-muted);
+  --rule: var(--border);
+  --link: var(--accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark (auto when no explicit preference) */
-    --bg: #0b0c0d; /* almost black */
-    --fg: #e7eaee; /* almost white */
-    --muted: #a3a9b3;
-    --rule: #30343a;
-    --link: #7fb0ff;
-    --selection-bg: #2a3650;
-    --selection-fg: #eef2f7;
-  }
+* {
+  box-sizing: border-box;
 }
 
-/* Explicit theme overrides via data-theme attribute */
-:root[data-theme="light"] {
-  --bg: #fafafa;
-  --fg: #141618;
-  --muted: #3d4851;
-  --rule: #dcdfe3;
-  --link: #0b64d6;
-  --selection-bg: #bcd3ff;
-  --selection-fg: #0a0c0f;
-}
-
-:root[data-theme="dark"] {
-  --bg: #0b0c0d;
-  --fg: #e7eaee;
-  --muted: #a3a9b3;
-  --rule: #30343a;
-  --link: #7fb0ff;
-  --selection-bg: #2a3650;
-  --selection-fg: #eef2f7;
-}
-
-::selection {
-  background: var(--selection-bg);
-  color: var(--selection-fg);
-}
-
-html, body {
-  height: 100%;
+html {
+  background: var(--bg);
 }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-family);
+  font-family: var(--font-body);
+  font-size: var(--font-size);
   line-height: var(--line-height);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Switching the theme fades rather than snaps. Colour is the only thing that moves, so this
+   cannot shift the layout. */
+body,
 *,
 *::before,
 *::after {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- arriving on a page ---------- */
+
+/* A page change swaps the text column and the footer for new elements while the bar stays
+   exactly where it was, so the new page can be given an entrance simply by animating those
+   elements as they are created. Gatsby's client-side navigation and a cold load both build
+   them the same way, so both get the same arrival with nothing to drive it.
+
+   Only what changed moves. The bar is the same bar either way, and a bar that blinked on
+   every click would read as the whole page reloading, which is the opposite of the point. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mdr-main,
+.site-footer {
+  animation: page-enter 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The rail is hidden until its headings have been read, so it has no entrance to make at the
+   moment it is built. Starting the animation when it stops being hidden gives it one, and it
+   arrives a touch after the text rather than alongside it. */
+.mdr-toc:not([hidden]) {
+  animation: page-enter 260ms cubic-bezier(0.22, 0.61, 0.36, 1) 60ms both;
+}
+
+/* The same link as inside an article, so a list of posts reads like the posts do. */
 a {
   color: var(--link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.15em;
 }
 
-.page {
-  min-height: 100svh;
+/* ---------- the bar ---------- */
+
+/* The site's name doubles as the way home, and looks the same either way. */
+.site-title {
+  color: var(--fg-strong);
+  font-size: var(--bar-font-size);
+  text-decoration: none;
 }
 
-.container {
-  width: min(100% - 2rem, var(--content-width));
-  margin-inline: auto;
+.site-title:hover {
+  color: var(--fg-strong);
+  text-decoration: none;
 }
 
-.topbar {
-  padding-block: calc(var(--base-spacing) * 0.8);
-}
-
-.toggle-row {
+/* Chrome, not prose: the bar's links are text-coloured, and only move on hover. */
+.site-nav {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 1rem;
+  font-family: var(--font-ui);
+  font-size: var(--bar-font-size);
+}
+
+.site-nav a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: var(--fg-strong);
+  text-decoration: none;
 }
 
 .theme-toggle {
   background: transparent;
   border: none;
-  color: inherit;
-  font: inherit;
-  padding: 0;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--bar-font-size);
+  padding: 0 4px;
   cursor: pointer;
   text-decoration: underline dotted;
+}
+
+.theme-toggle:hover {
+  color: var(--fg-strong);
 }
 
 .theme-toggle:focus-visible,
@@ -118,25 +163,121 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
-.header-nav {
+/* ---------- the contents rail ---------- */
+
+/* md-reader takes the rail out of the grid outright when it is switched off. Here it closes
+   instead: the column narrows to nothing and the rail fades as it goes, so the text column
+   grows into the space rather than jumping into it. The rail has to keep its box through all
+   of that, which is why the display: none is overridden below. */
+/* Only once the page has settled: see the note in Article.js about what moves on load. */
+.mdr-layout.toc-animated {
+  transition: grid-template-columns 220ms ease;
+}
+
+.mdr-toc {
+  overflow-x: hidden;
+}
+
+.toc-animated > .mdr-toc {
+  transition: opacity 180ms ease, padding 220ms ease, border-left-width 220ms ease;
+}
+
+/* A grid item will not shrink past its own padding and border, so a column closed to nothing
+   would still leave a sliver of rail standing there. These close with it. */
+.mdr-layout[data-toc="off"] > .mdr-toc {
+  display: block;
+  opacity: 0;
+  padding-inline: 0;
+  border-left-width: 0;
+  pointer-events: none;
+}
+
+/* Inside the rail the contents keep their full width while the column closes over them, so the
+   headings slide out of sight instead of rewrapping on the way. */
+.mdr-toc-head,
+.mdr-toc-list {
+  width: calc(var(--toc-w) - 24px);
+}
+
+/* The button dims while the rail is closed, so the bar says which way the switch is set even
+   though the thing it controls is no longer on screen. */
+.toc-toggle[aria-expanded="false"] {
+  color: var(--fg-muted);
+}
+
+/* A reader who asked for less movement gets the same states, arrived at instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .mdr-layout,
+  .mdr-toc,
+  body,
+  *,
+  *::before,
+  *::after {
+    transition: none;
+  }
+
+  .mdr-main,
+  .site-footer,
+  .mdr-toc:not([hidden]) {
+    animation: none;
+  }
+}
+
+/* ---------- the text column ---------- */
+
+/* The title block reads as part of the article, so it borrows the article's scale rather
+   than keeping a second set of sizes. */
+.page-head h1 {
+  font-size: 1.9em;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--fg-strong);
+  margin: 0;
+}
+
+.page-head p {
+  margin: 0.4rem 0 0;
+}
+
+/* The way back is navigation rather than prose, so it wears the chrome font the bar wears. */
+.header-nav,
+.article-nav {
+  font-family: var(--font-ui);
   font-size: 12px;
 }
 
-h1 {
-  font-size: 1.35rem;
-  margin: 0;
-  letter-spacing: 0.02em;
+.page-head .header-nav {
+  margin-top: 0.75rem;
+}
+
+/* The column is --content-width wide, and that is a count of characters measured in each
+   element's own font. A row that has to line up with the prose therefore has to be set in the
+   prose font and size, and leave the chrome font to what is inside it. */
+.article-nav,
+.site-footer-row {
+  font-family: var(--font-body);
+  font-size: var(--font-size);
+}
+
+.article-nav {
+  margin-top: 2rem;
+  padding-top: var(--base-spacing);
+  border-top: 1px solid var(--rule);
+}
+
+.article-nav a {
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.page-head hr {
+  margin: var(--base-spacing) 0 calc(var(--base-spacing) * 1.5);
 }
 
 h2 {
-  font-size: 1.05rem;
-  margin: calc(var(--base-spacing) * 1.25) 0 var(--base-spacing);
-  letter-spacing: 0.02em;
-}
-
-p,
-li {
-  color: var(--fg);
+  font-size: 1.45em;
+  color: var(--fg-strong);
+  margin: calc(var(--base-spacing) * 1.5) 0 var(--base-spacing);
 }
 
 .muted {
@@ -153,12 +294,8 @@ hr {
   margin: calc(var(--base-spacing) * 1.25) 0;
 }
 
-main {
-  padding-bottom: calc(var(--base-spacing) * 2);
-}
-
 section + section {
-  margin-top: calc(var(--base-spacing) * 1.25);
+  margin-top: calc(var(--base-spacing) * 1.5);
 }
 
 ul.inline {
@@ -167,11 +304,43 @@ ul.inline {
   margin: 0;
 }
 
-footer {
+/* ---------- the footer ---------- */
+
+/* A row of the layout grid under the text column, so it lines up with the prose above it
+   instead of with the window. The padding matches .mdr-main's and the inner row carries the
+   width, which is how md-reader aligns everything else in that column. */
+.site-footer {
+  grid-column: 2;
+  padding: var(--base-spacing) 40px calc(var(--base-spacing) * 2);
   border-top: 1px solid var(--rule);
 }
 
-/* Blog specific styles */
+.site-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+
+.site-footer-row p {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+}
+
+.site-footer-row .build-date {
+  font-size: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .site-footer {
+    padding-inline: 16px;
+  }
+}
+
+/* ---------- lists of posts and projects ---------- */
+
 .blog-list {
   list-style: none;
   padding: 0;
@@ -199,61 +368,4 @@ footer {
 
 .blog-post-excerpt {
   margin: 0;
-}
-
-article h1 {
-  font-size: 1.5rem;
-  margin-bottom: var(--base-spacing);
-}
-
-article h2 {
-  font-size: 1.2rem;
-}
-
-article h3 {
-  font-size: 1.05rem;
-}
-
-article pre {
-  background: var(--rule);
-  padding: 1rem;
-  overflow-x: auto;
-  border-radius: 4px;
-}
-
-article code {
-  font-family: var(--font-family);
-  background: var(--rule);
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-  font-size: 0.9em;
-}
-
-article pre code {
-  background: transparent;
-  padding: 0;
-}
-
-article table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 0.9em;
-  margin-bottom: var(--base-spacing);
-}
-
-article th,
-article td {
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--rule);
-}
-
-article th {
-  color: var(--muted);
-  font-weight: normal;
-  white-space: nowrap;
-}
-
-article tbody tr:last-child td {
-  border-bottom: none;
 }
