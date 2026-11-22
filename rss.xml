@@ -1,4 +1,3716 @@
-<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sun, 22 Nov 2026 13:12:08 GMT</lastBuildDate><item><title><![CDATA[The Unified Theory of Constraints]]></title><description><![CDATA[Every trick that makes AI agents work better is the same move: narrowing the space until the good answer is the likely one.]]></description><link>https://frycz.github.io/blog/unified-theory-of-constraints</link><guid isPermaLink="false">https://frycz.github.io/blog/unified-theory-of-constraints</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Whenever I get satisfying results from an AI agent, I look back at the context I provided in the input. Most often it&apos;s not that the instructions were precise enough, but rather it feels like I defined good limits and still left space for the model to be &quot;creative&quot;.&lt;/p&gt;
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[Adam Sawicki]]></title><description><![CDATA[Building reliable systems.]]></description><link>http://github.com/dylang/node-rss</link><generator>GatsbyJS</generator><lastBuildDate>Sun, 22 Nov 2026 14:04:16 GMT</lastBuildDate><item><title><![CDATA[Modular Agent Architecture]]></title><description><![CDATA[The components an LLM agent consists of, the interfaces between them, and how they compose: a model, a harness and tools that each change for one reason and can be replaced on their own.]]></description><link>https://frycz.github.io/blog/modular-agent</link><guid isPermaLink="false">https://frycz.github.io/blog/modular-agent</guid><pubDate>Sun, 22 Nov 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;This document presents a modular architecture for LLM agents: the components an agent consists of, the interfaces between them and how they work together.&lt;/p&gt;
+&lt;p&gt;The goal is to build agents from ready-made blocks. A new agent is made by replacing, adding or removing components. Swapping a hosted model for a local one, giving an agent a new tool or putting a permission check in front of its tools must each be a change to one component, with the rest of the agent untouched.&lt;/p&gt;
+&lt;p&gt;Only the essential components are covered here. Each of them is developed in more detail in separate documents.&lt;/p&gt;
+&lt;p&gt;The architecture is technology agnostic. Interfaces are written in Python only as an example notation, and any language with types and interfaces can express them. Each interface is followed by a small fake example. Every code block runs on its own when pasted into a Python console: the definitions it needs from earlier sections are included in a folded part at its top.&lt;/p&gt;
+&lt;h2&gt;1. The core idea&lt;/h2&gt;
+&lt;p&gt;An agent is a model run in a loop.&lt;/p&gt;
+&lt;p&gt;The model reads the conversation so far and decides what to do next: answer, or ask for a tool to be used. The harness runs the loop: it sends the conversation to the model, executes the tools the model asks for, adds the results to the conversation and asks the model again. The tools are what the agent can do beyond producing text: run commands, read files, call services, operate devices.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart LR
+    Model[&quot;Model&amp;#x3C;br/&gt;decides the next step&quot;]
+    Harness[&quot;Harness&amp;#x3C;br/&gt;runs the loop&quot;]
+    Tools[&quot;Tools&amp;#x3C;br/&gt;act on the world&quot;]
+
+    Model --&gt;|&quot;response&quot;| Harness
+    Harness --&gt;|&quot;prompt&quot;| Model
+    Harness --&gt;|&quot;tool call&quot;| Tools
+    Tools --&gt;|&quot;tool result&quot;| Harness
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 1: The three components of an agent and the messages they exchange.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The three components exchange four kinds of messages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;A prompt, sent by the harness to the model: everything the model must know to decide the next step.&lt;/li&gt;
+&lt;li&gt;A response, returned by the model: text, tool calls, or both.&lt;/li&gt;
+&lt;li&gt;A tool call, passed by the harness to a tool: the name of the tool and its input, as requested by the model.&lt;/li&gt;
+&lt;li&gt;A tool result, returned by the tool: the output, or an error.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A typical run takes several rounds:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;sequenceDiagram
+    participant M as Model
+    participant H as Harness
+    participant T as Tools
+
+    H-&gt;&gt;M: prompt (task)
+    M--&gt;&gt;H: response (tool call: read_file)
+    H-&gt;&gt;T: read_file(path)
+    T--&gt;&gt;H: tool result (file content)
+    H-&gt;&gt;M: prompt (task, tool call, tool result)
+    M--&gt;&gt;H: response (final answer)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 2: A run with one tool call, in two rounds between the harness and the model.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The model only asks for actions, and the harness carries them out. This split is the basis of the whole architecture: the next sections define the data that flows on the arrows, then each component in turn.&lt;/p&gt;
+&lt;h2&gt;2. The data between components&lt;/h2&gt;
+&lt;p&gt;Components exchange data only: values that carry no behaviour and can be serialized, for example to JSON. No component passes objects with methods or references to its internals to another component. This keeps components independent and makes every exchange possible to log, store and replay.&lt;/p&gt;
+&lt;h3&gt;Conversation&lt;/h3&gt;
+&lt;p&gt;The conversation is a list of messages. Each message has a role, &lt;code&gt;user&lt;/code&gt; for what comes into the agent and &lt;code&gt;assistant&lt;/code&gt; for what the model produced, and a list of content blocks. A content block is one piece of content:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Text.&lt;/li&gt;
+&lt;li&gt;A tool call: an id, the tool name and the input.&lt;/li&gt;
+&lt;li&gt;A tool result: the id of the call it answers, the output and an error flag.&lt;/li&gt;
+&lt;li&gt;Thinking: the model&apos;s reasoning, if the model produces it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+# Example: the run from Graph 2 as a conversation
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+for message in conversation:
+    print(message)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Tool results are sent in &lt;code&gt;user&lt;/code&gt; messages, because they come into the agent from outside the model.&lt;/p&gt;
+&lt;h3&gt;Prompt and response&lt;/h3&gt;
+&lt;p&gt;A prompt is what the model receives on one call: the system prompt (the standing instructions that define the agent), the conversation, and the definitions of the tools the model may call. A tool definition tells the model what a tool does and what input it takes.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+# endregion
+
+from dataclasses import dataclass
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+# Example: the first prompt of the run, with one tool
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+prompt = Prompt(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation[:1],
+    tools=[read_file],
+)
+print(prompt)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A response is what the model returns: new content blocks, the reason it stopped and what the call cost.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+# endregion
+
+from dataclasses import dataclass
+from typing import Literal
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+# Example: the model asks for a tool call
+response = Response(
+    content=[ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;})],
+    stop_reason=&quot;tool_use&quot;,
+    usage=Usage(input_tokens=120, output_tokens=25, cost=0.0004, seconds=0.8),
+)
+print(response)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;3. Model&lt;/h2&gt;
+&lt;p&gt;The model is a stateless function from a prompt to a response. It keeps no memory between calls, so everything it needs to know must be in the prompt.&lt;/p&gt;
+&lt;p&gt;The model can run in different places:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;On a vendor&apos;s servers, accessed through a hosted API.&lt;/li&gt;
+&lt;li&gt;On an inference server in the local network.&lt;/li&gt;
+&lt;li&gt;In a separate process on the same machine.&lt;/li&gt;
+&lt;li&gt;Inside the agent&apos;s own process, loaded as a library.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The rest of the agent does not know where the model runs. It only sees this interface:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+prompt = Prompt(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation[:1],
+    tools=[read_file],
+)
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+# endregion
+
+import asyncio
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+# Pieces of text as they are produced, then the whole response.
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+# Example: a fake model that always gives the same answer
+class FakeModel(Model):
+    async def complete(self, prompt):
+        text = Text(&quot;Hi, I am a fake model.&quot;)
+        return Response([text], &quot;end_turn&quot;, Usage(40, 10, 0.0, 0.1))
+
+    async def stream(self, prompt):
+        yield await self.complete(prompt)
+
+    def capabilities(self):
+        return Capabilities(context_window=8_000, tool_calling=True)
+
+print(asyncio.run(FakeModel().complete(prompt)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Behind the interface, the model is made of three replaceable parts:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;flowchart TB
+    Iface[&quot;Model interface&amp;#x3C;br/&gt;complete() / stream()&quot;]
+    Adapter[&quot;Protocol adapter&amp;#x3C;br/&gt;translates Prompt and Response to and from the wire format of one API&quot;]
+    Transport[&quot;Transport&amp;#x3C;br/&gt;moves the request: HTTP, local socket or in-process call&quot;]
+    Endpoint[&quot;Endpoint&amp;#x3C;br/&gt;one reachable model service: address, credentials, limits&quot;]
+
+    Iface --&gt; Adapter
+    Adapter --&gt; Transport
+    Transport --&gt; Endpoint
+
+    Endpoint --&gt; Hosted[(&quot;Hosted API&quot;)]
+    Endpoint --&gt; Network[(&quot;Network inference server&quot;)]
+    Endpoint --&gt; Process[(&quot;Local process&quot;)]
+    Endpoint --&gt; InProc[(&quot;In-process library&quot;)]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 3: The parts behind the model interface and the places where a model can run.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Moving an agent to a different model or a different place where the model runs changes only these parts.&lt;/p&gt;
+&lt;h3&gt;Protocol adapter&lt;/h3&gt;
+&lt;p&gt;A protocol adapter converts between the common data of section 2 and the wire format of one API. It is a pure data-to-data conversion: it performs no I/O and holds no credentials, so it can be tested without network access. Supporting another API requires another adapter; the rest of the agent is unchanged.&lt;/p&gt;
+&lt;p&gt;The example implements the adapter for the Anthropic Messages API. It encodes the prompt from the Prompt and response section and decodes a sample response body, so it runs without an API key.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+prompt = Prompt(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation[:1],
+    tools=[read_file],
+)
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+# endregion
+
+import json
+from abc import ABC, abstractmethod
+
+class ProtocolAdapter(ABC):
+    @abstractmethod
+    def encode(self, model: str, prompt: Prompt) -&gt; dict:
+        &quot;&quot;&quot;Convert the prompt to a request body of one API.&quot;&quot;&quot;
+
+    @abstractmethod
+    def decode(self, body: dict) -&gt; Response:
+        &quot;&quot;&quot;Convert a response body of the API to a response.&quot;&quot;&quot;
+
+# Example: an adapter for the Anthropic Messages API
+class AnthropicAdapter(ProtocolAdapter):
+    def encode(self, model, prompt):
+        return {
+            &quot;model&quot;: model,
+            &quot;max_tokens&quot;: 16000,
+            &quot;system&quot;: prompt.system,
+            &quot;messages&quot;: [
+                {&quot;role&quot;: m.role, &quot;content&quot;: self._blocks(m.content)}
+                for m in prompt.messages
+            ],
+            &quot;tools&quot;: [vars(t) for t in prompt.tools],
+        }
+
+    def _blocks(self, blocks):
+        wire = []
+        for b in blocks:
+            match b:
+                case Text(text):
+                    wire.append({&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: text})
+                case ToolCall(id, name, input):
+                    wire.append(
+                        {&quot;type&quot;: &quot;tool_use&quot;, &quot;id&quot;: id, &quot;name&quot;: name, &quot;input&quot;: input}
+                    )
+                case ToolResult(call_id, content, is_error):
+                    wire.append({
+                        &quot;type&quot;: &quot;tool_result&quot;,
+                        &quot;tool_use_id&quot;: call_id,
+                        &quot;content&quot;: self._blocks(content),
+                        &quot;is_error&quot;: is_error,
+                    })
+                # Thinking is not sent back: the API accepts it only with its
+                # original signature, which this example does not keep.
+        return wire
+
+    def decode(self, body):
+        content = []
+        for b in body[&quot;content&quot;]:
+            match b[&quot;type&quot;]:
+                case &quot;text&quot;:
+                    content.append(Text(b[&quot;text&quot;]))
+                case &quot;tool_use&quot;:
+                    content.append(ToolCall(b[&quot;id&quot;], b[&quot;name&quot;], b[&quot;input&quot;]))
+                case &quot;thinking&quot;:
+                    content.append(Thinking(b[&quot;thinking&quot;]))
+        stop = {&quot;stop_sequence&quot;: &quot;end_turn&quot;}.get(body[&quot;stop_reason&quot;], body[&quot;stop_reason&quot;])
+        u = body[&quot;usage&quot;]
+        # Cost and time are not part of the body; the model fills them in.
+        return Response(content, stop, Usage(u[&quot;input_tokens&quot;], u[&quot;output_tokens&quot;], 0.0, 0.0))
+
+adapter = AnthropicAdapter()
+print(json.dumps(adapter.encode(&quot;claude-opus-5-5&quot;, prompt), indent=2))
+
+body = {
+    &quot;content&quot;: [{&quot;type&quot;: &quot;tool_use&quot;, &quot;id&quot;: &quot;toolu_01&quot;, &quot;name&quot;: &quot;read_file&quot;,
+                 &quot;input&quot;: {&quot;path&quot;: &quot;notes.txt&quot;}}],
+    &quot;stop_reason&quot;: &quot;tool_use&quot;,
+    &quot;usage&quot;: {&quot;input_tokens&quot;: 410, &quot;output_tokens&quot;: 52},
+}
+print(adapter.decode(body))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The adapter in the code also converts images and documents, keeps the original wire form of thinking blocks so that they can be sent back unchanged, and decodes streamed responses.&lt;/p&gt;
+&lt;h3&gt;Transport&lt;/h3&gt;
+&lt;p&gt;A transport sends a request body to one address and returns the response body. It holds the address and the request headers, including credentials, and does not interpret the body. An HTTP transport serves hosted APIs and network inference servers; other transports send the body over a local socket or pass it to a library in the same process.&lt;/p&gt;
+&lt;p&gt;Running the example requires an Anthropic API key in the &lt;code&gt;ANTHROPIC_API_KEY&lt;/code&gt; environment variable. The example sends a request body written by hand, without an adapter.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import asyncio
+import json
+import urllib.request
+from abc import ABC, abstractmethod
+
+class Transport(ABC):
+    @abstractmethod
+    async def send(self, body: dict) -&gt; dict:
+        &quot;&quot;&quot;Send the request body and return the response body.&quot;&quot;&quot;
+
+# Example: a transport that sends JSON to one URL over HTTP
+class HttpTransport(Transport):
+    def __init__(self, url: str, headers: dict[str, str]):
+        self.url, self.headers = url, headers
+
+    async def send(self, body):
+        return await asyncio.to_thread(self._post, body)
+
+    def _post(self, body):
+        request = urllib.request.Request(
+            self.url,
+            data=json.dumps(body).encode(),
+            headers={&quot;content-type&quot;: &quot;application/json&quot;, **self.headers},
+        )
+        with urllib.request.urlopen(request, timeout=600) as response:
+            return json.load(response)
+
+# Requires an Anthropic API key in ANTHROPIC_API_KEY.
+import os
+
+transport = HttpTransport(
+    &quot;https://api.anthropic.com/v1/messages&quot;,
+    {&quot;x-api-key&quot;: os.environ[&quot;ANTHROPIC_API_KEY&quot;], &quot;anthropic-version&quot;: &quot;2023-06-01&quot;},
+)
+body = {
+    &quot;model&quot;: &quot;claude-opus-5-5&quot;,
+    &quot;max_tokens&quot;: 1000,
+    &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Say hello.&quot;}],
+}
+print(asyncio.run(transport.send(body)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The transport in the code also streams responses as server-sent events, supports cancellation and marks rate limits, overload and network failures as retryable.&lt;/p&gt;
+&lt;h3&gt;Endpoint&lt;/h3&gt;
+&lt;p&gt;An endpoint is one reachable model service. &lt;code&gt;AdapterEndpoint&lt;/code&gt; combines a protocol adapter with a transport and holds the prices of the service, so it computes the cost of each call. &lt;code&gt;EndpointModel&lt;/code&gt; implements the &lt;code&gt;Model&lt;/code&gt; interface for one model name on one endpoint: it measures the duration of each call and fills in the cost from the endpoint.&lt;/p&gt;
+&lt;p&gt;Running the example requires an Anthropic API key in the &lt;code&gt;ANTHROPIC_API_KEY&lt;/code&gt; environment variable. The example sends the prompt from the Prompt and response section to Claude Opus 5.5. The response is a tool call to &lt;code&gt;read_file&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+prompt = Prompt(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation[:1],
+    tools=[read_file],
+)
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+import asyncio
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+# Pieces of text as they are produced, then the whole response.
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+import json
+import urllib.request
+
+class ProtocolAdapter(ABC):
+    @abstractmethod
+    def encode(self, model: str, prompt: Prompt) -&gt; dict:
+        &quot;&quot;&quot;Convert the prompt to a request body of one API.&quot;&quot;&quot;
+
+    @abstractmethod
+    def decode(self, body: dict) -&gt; Response:
+        &quot;&quot;&quot;Convert a response body of the API to a response.&quot;&quot;&quot;
+
+# Example: an adapter for the Anthropic Messages API
+class AnthropicAdapter(ProtocolAdapter):
+    def encode(self, model, prompt):
+        return {
+            &quot;model&quot;: model,
+            &quot;max_tokens&quot;: 16000,
+            &quot;system&quot;: prompt.system,
+            &quot;messages&quot;: [
+                {&quot;role&quot;: m.role, &quot;content&quot;: self._blocks(m.content)}
+                for m in prompt.messages
+            ],
+            &quot;tools&quot;: [vars(t) for t in prompt.tools],
+        }
+
+    def _blocks(self, blocks):
+        wire = []
+        for b in blocks:
+            match b:
+                case Text(text):
+                    wire.append({&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: text})
+                case ToolCall(id, name, input):
+                    wire.append(
+                        {&quot;type&quot;: &quot;tool_use&quot;, &quot;id&quot;: id, &quot;name&quot;: name, &quot;input&quot;: input}
+                    )
+                case ToolResult(call_id, content, is_error):
+                    wire.append({
+                        &quot;type&quot;: &quot;tool_result&quot;,
+                        &quot;tool_use_id&quot;: call_id,
+                        &quot;content&quot;: self._blocks(content),
+                        &quot;is_error&quot;: is_error,
+                    })
+                # Thinking is not sent back: the API accepts it only with its
+                # original signature, which this example does not keep.
+        return wire
+
+    def decode(self, body):
+        content = []
+        for b in body[&quot;content&quot;]:
+            match b[&quot;type&quot;]:
+                case &quot;text&quot;:
+                    content.append(Text(b[&quot;text&quot;]))
+                case &quot;tool_use&quot;:
+                    content.append(ToolCall(b[&quot;id&quot;], b[&quot;name&quot;], b[&quot;input&quot;]))
+                case &quot;thinking&quot;:
+                    content.append(Thinking(b[&quot;thinking&quot;]))
+        stop = {&quot;stop_sequence&quot;: &quot;end_turn&quot;}.get(body[&quot;stop_reason&quot;], body[&quot;stop_reason&quot;])
+        u = body[&quot;usage&quot;]
+        # Cost and time are not part of the body; the model fills them in.
+        return Response(content, stop, Usage(u[&quot;input_tokens&quot;], u[&quot;output_tokens&quot;], 0.0, 0.0))
+
+class Transport(ABC):
+    @abstractmethod
+    async def send(self, body: dict) -&gt; dict:
+        &quot;&quot;&quot;Send the request body and return the response body.&quot;&quot;&quot;
+
+# Example: a transport that sends JSON to one URL over HTTP
+class HttpTransport(Transport):
+    def __init__(self, url: str, headers: dict[str, str]):
+        self.url, self.headers = url, headers
+
+    async def send(self, body):
+        return await asyncio.to_thread(self._post, body)
+
+    def _post(self, body):
+        request = urllib.request.Request(
+            self.url,
+            data=json.dumps(body).encode(),
+            headers={&quot;content-type&quot;: &quot;application/json&quot;, **self.headers},
+        )
+        with urllib.request.urlopen(request, timeout=600) as response:
+            return json.load(response)
+# endregion
+
+import os
+import time
+
+class Endpoint(ABC):
+    @abstractmethod
+    async def complete(self, model: str, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt to the named model and return its response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def cost(self, usage: Usage) -&gt; float:
+        &quot;&quot;&quot;The price of the usage in USD.&quot;&quot;&quot;
+
+# Example: an endpoint made of a protocol adapter and a transport
+class AdapterEndpoint(Endpoint):
+    def __init__(self, adapter, transport, input_usd_per_mtok, output_usd_per_mtok):
+        self.adapter, self.transport = adapter, transport
+        self.prices = (input_usd_per_mtok, output_usd_per_mtok)
+
+    async def complete(self, model, prompt):
+        body = await self.transport.send(self.adapter.encode(model, prompt))
+        return self.adapter.decode(body)
+
+    def cost(self, usage):
+        input_price, output_price = self.prices
+        tokens_usd = usage.input_tokens * input_price + usage.output_tokens * output_price
+        return tokens_usd / 1_000_000
+
+# Example: a model that runs on an endpoint
+class EndpointModel(Model):
+    def __init__(self, endpoint: Endpoint, name: str, caps: Capabilities):
+        self.endpoint, self.name, self.caps = endpoint, name, caps
+
+    async def complete(self, prompt):
+        start = time.monotonic()
+        response = await self.endpoint.complete(self.name, prompt)
+        response.usage.cost = self.endpoint.cost(response.usage)
+        response.usage.seconds = time.monotonic() - start
+        return response
+
+    async def stream(self, prompt):
+        yield await self.complete(prompt)
+
+    def capabilities(self):
+        return self.caps
+
+# Requires an Anthropic API key in ANTHROPIC_API_KEY.
+anthropic = AdapterEndpoint(
+    AnthropicAdapter(),
+    HttpTransport(
+        &quot;https://api.anthropic.com/v1/messages&quot;,
+        {&quot;x-api-key&quot;: os.environ[&quot;ANTHROPIC_API_KEY&quot;], &quot;anthropic-version&quot;: &quot;2023-06-01&quot;},
+    ),
+    input_usd_per_mtok=4.0,
+    output_usd_per_mtok=20.0,
+)
+model = EndpointModel(
+    anthropic, &quot;claude-opus-5-5&quot;, Capabilities(context_window=1_000_000, tool_calling=True)
+)
+print(asyncio.run(model.complete(prompt)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The prices are the Claude Opus 5.5 prices per million input and output tokens at the time of writing. In the code, &lt;code&gt;EndpointModel&lt;/code&gt; also runs each call through a scheduler, which limits the number of concurrent calls to the endpoint and retries transient failures.&lt;/p&gt;
+&lt;h2&gt;4. Tools&lt;/h2&gt;
+&lt;p&gt;A tool is a definition and a handler. The definition is sent to the model in the prompt, so the model knows the tool exists and how to call it. The handler is run by the harness when the model calls the tool.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+# endregion
+
+import asyncio
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+# Example: a read_file that returns the same content for any path
+class ReadFile(Tool):
+    definition = read_file
+
+    async def execute(self, input):
+        return ToolOutput([Text(&quot;Here is the content of the file.&quot;)])
+
+print(asyncio.run(ReadFile().execute({&quot;path&quot;: &quot;notes.txt&quot;})))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The separation means the same definition can be backed by different handlers. For the model, &lt;code&gt;read_file&lt;/code&gt; is the same tool whether it reads a local disk or a file on a remote machine.&lt;/p&gt;
+&lt;h2&gt;5. Harness&lt;/h2&gt;
+&lt;p&gt;The harness is everything around the model. It holds the state of the run, builds each prompt, runs the loop, enforces stop conditions and lets other parts observe and control the run.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart TB
+    subgraph Harness
+        State[(&quot;State&quot;)]
+        Assembly[&quot;Prompt assembly&amp;#x3C;br/&gt;ContextPolicy&quot;]
+        Loop[&quot;Loop&quot;]
+        Budget[&quot;Budget&quot;]
+        Events[&quot;EventBus&quot;]
+    end
+
+    State --&gt;|&quot;read&quot;| Assembly
+    Assembly --&gt;|&quot;prompt&quot;| Loop
+    Budget -.-&gt;|&quot;stop?&quot;| Loop
+    Loop &amp;#x3C;-.-&gt;|&quot;emit / intercept,&amp;#x3C;br/&gt;allow / deny / modify&quot;| Events
+    Loop --&gt;|&quot;tool calls&quot;| Tools[&quot;Tools&quot;]
+    Loop &amp;#x3C;--&gt;|&quot;prompt / response&quot;| Model[&quot;Model&quot;]
+    Tools ~~~ Model
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 4: The parts of the harness and the path of one step through them.&lt;/em&gt;&lt;/p&gt;
+&lt;h3&gt;State&lt;/h3&gt;
+&lt;p&gt;The state is the complete record of a run: the system prompt, the conversation, the usage so far and metadata such as the model used.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+# endregion
+
+from dataclasses import dataclass
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+# Example: the state after the run from Graph 2
+state = RunState(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation,
+    usage=Usage(input_tokens=90, output_tokens=25, cost=0.0003, seconds=0.2),
+    metadata={&quot;model&quot;: &quot;fake&quot;},
+)
+print(f&quot;{len(state.messages)} messages, {state.usage}&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Because the state is data, a run can be saved and resumed later, inspected after it ends, or moved to another machine, without any change to the loop.&lt;/p&gt;
+&lt;h3&gt;Prompt assembly&lt;/h3&gt;
+&lt;p&gt;Before each model call, the harness builds a prompt from:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The system prompt.&lt;/li&gt;
+&lt;li&gt;Skills: instructions for specific kinds of work, added when they are relevant.&lt;/li&gt;
+&lt;li&gt;The conversation, including earlier tool calls and results.&lt;/li&gt;
+&lt;li&gt;The definitions of the available tools.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;What the model actually sees on each call is decided by a context policy. It can cut large tool outputs, replace old parts of the conversation with a summary, inject skills or current information, or hide tools that do not apply. The policy changes only the prompt and leaves the state as it is.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;flowchart TB
+    System[&quot;System prompt&quot;]
+    Skills[&quot;Skills&quot;]
+    History[(&quot;Conversation&quot;)]
+    Defs[&quot;Tool definitions&quot;]
+    Build[&quot;Build prompt&quot;]
+    Policy[&quot;ContextPolicy.prepare()&quot;]
+    Prompt[&quot;Prompt&quot;]
+
+    System --&gt; Build
+    Skills --&gt; Build
+    History --&gt; Build
+    Defs --&gt; Build
+    Build --&gt; Policy
+    Policy --&gt; Prompt
+    Prompt --&gt; Model[&quot;Model&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 5: How the prompt for one model call is built.&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+conversation = [
+    Message(&quot;user&quot;, [Text(&quot;How many lines does notes.txt have?&quot;)]),
+    Message(&quot;assistant&quot;, [
+        ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;}),
+    ]),
+    Message(&quot;user&quot;, [
+        ToolResult(call_id=&quot;c1&quot;, content=[Text(&quot;first\nsecond\nthird&quot;)]),
+    ]),
+    Message(&quot;assistant&quot;, [Text(&quot;notes.txt has 3 lines.&quot;)]),
+]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+prompt = Prompt(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation[:1],
+    tools=[read_file],
+)
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+state = RunState(
+    system=&quot;You are a helpful assistant.&quot;,
+    messages=conversation,
+    usage=Usage(input_tokens=90, output_tokens=25, cost=0.0003, seconds=0.2),
+    metadata={&quot;model&quot;: &quot;fake&quot;},
+)
+# endregion
+
+import asyncio
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+# Example: a policy that adds the current time to the system prompt
+class AddTime(ContextPolicy):
+    async def prepare(self, state, prompt):
+        system = f&quot;{prompt.system}\nTime: {datetime.now():%H:%M}&quot;
+        return Prompt(system, prompt.messages, prompt.tools)
+
+print(asyncio.run(AddTime().prepare(state, prompt)).system)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Loop&lt;/h3&gt;
+&lt;p&gt;The loop advances the state one step at a time. One step builds a prompt, calls the model and appends the response. If the response contains tool calls, the loop executes them, in parallel when possible, appends the results and takes another step. Otherwise the run ends. Along the way the loop emits events to the event bus, and each tool call passes through the bus before it is executed, so the bus can allow, deny or replace it (see Events below).&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart TB
+    Start([&quot;Task&quot;]) --&gt; Build[&quot;Build prompt&quot;]
+    Build --&gt; Call[&quot;Call model&quot;]
+    Call --&gt; Append[&quot;Append response to state&quot;]
+    Append --&gt; HasCalls{&quot;Tool calls?&quot;}
+    HasCalls --&gt;|&quot;no&quot;| End([&quot;Outcome&quot;])
+    HasCalls --&gt;|&quot;yes&quot;| Exec[&quot;Execute tools&quot;]
+    Exec --&gt; AppendResults[&quot;Append tool results to state&quot;]
+    AppendResults --&gt; Stop{&quot;Stop condition?&quot;}
+    Stop --&gt;|&quot;no&quot;| Build
+    Stop --&gt;|&quot;yes&quot;| End
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 6: The loop, from a task to an outcome.&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+# endregion
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+@dataclass
+class Outcome:
+    answer: str
+    # Why the run ended: a stop reason, an exhausted budget or cancellation.
+    reason: str
+    usage: Usage
+
+class Loop(ABC):
+    @abstractmethod
+    async def step(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; bool:
+        &quot;&quot;&quot;One model call and its tool calls. True if the run goes on.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def run(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; Outcome:
+        &quot;&quot;&quot;Take steps until a stop condition.&quot;&quot;&quot;
+
+# Example: a simple loop, run in the Agent example below
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+class SimpleLoop(Loop):
+    async def step(self, state, model, harness):
+        # Build the prompt from the state and the tool definitions,
+        # then let the context policy adjust it.
+        definitions = [t.definition for t in harness.tools]
+        prompt = Prompt(state.system, state.messages, definitions)
+        if harness.policy:
+            prompt = await harness.policy.prepare(state, prompt)
+
+        # Call the model and charge its usage to the budget and the state.
+        await emit(harness, &quot;model_call&quot;, prompt)
+        response = await model.complete(prompt)
+        await emit(harness, &quot;model_response&quot;, response)
+        harness.budget.charge(response.usage)
+        state.usage.input_tokens += response.usage.input_tokens
+        state.usage.output_tokens += response.usage.output_tokens
+        state.messages.append(Message(&quot;assistant&quot;, response.content))
+
+        # No tool calls: the model has finished, the run ends.
+        calls = [b for b in response.content if isinstance(b, ToolCall)]
+        if not calls:
+            return False
+
+        # Execute each tool call in order and collect the results.
+        # The event bus sees each call first and can deny or replace it.
+        tools = {t.definition.name: t for t in harness.tools}
+        results = []
+        for call in calls:
+            await emit(harness, &quot;tool_call&quot;, call)
+            decision = Allow()
+            if harness.events:
+                decision = await harness.events.intercept(call)
+            match decision:
+                case Deny(reason):
+                    output = ToolOutput([Text(reason)], is_error=True)
+                case Replace(changed):
+                    output = await tools[changed.name].execute(changed.input)
+                case _:
+                    output = await tools[call.name].execute(call.input)
+            result = ToolResult(call.id, output.content, output.is_error)
+            await emit(harness, &quot;tool_result&quot;, result)
+            results.append(result)
+
+        # All results go back to the model in one user message.
+        state.messages.append(Message(&quot;user&quot;, results))
+
+        # Take another step unless the budget is exhausted.
+        return not harness.budget.exhausted()
+
+    async def run(self, state, model, harness):
+        while await self.step(state, model, harness):
+            pass
+        reason = &quot;budget&quot; if harness.budget.exhausted() else &quot;end_turn&quot;
+        # The answer is the text of the last message, without thinking.
+        last = state.messages[-1].content
+        answer = &quot;&quot;.join(b.text for b in last if isinstance(b, Text))
+        return Outcome(answer, reason, state.usage)
+
+print(&quot;SimpleLoop is ready. It runs in the Agent example in section 6.&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Stop conditions and budget&lt;/h3&gt;
+&lt;p&gt;A run ends when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The model finishes its turn.&lt;/li&gt;
+&lt;li&gt;The model is cut off or refuses.&lt;/li&gt;
+&lt;li&gt;The budget is exhausted: steps, tokens, cost or time.&lt;/li&gt;
+&lt;li&gt;The run is cancelled from outside.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The budget is required, so every agent has a guaranteed end, even when the model never stops calling tools.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+response = Response(
+    content=[ToolCall(id=&quot;c1&quot;, name=&quot;read_file&quot;, input={&quot;path&quot;: &quot;notes.txt&quot;})],
+    stop_reason=&quot;tool_use&quot;,
+    usage=Usage(input_tokens=120, output_tokens=25, cost=0.0004, seconds=0.8),
+)
+# endregion
+
+from abc import ABC, abstractmethod
+
+class Budget(ABC):
+    @abstractmethod
+    def charge(self, usage: Usage) -&gt; None: ...
+
+    @abstractmethod
+    def exhausted(self) -&gt; bool: ...
+
+    @abstractmethod
+    def child(self, limit: Usage) -&gt; &quot;Budget&quot;:
+        &quot;&quot;&quot;A budget for a sub-agent, bounded by what is left of this one.&quot;&quot;&quot;
+
+# Example: a budget that counts model calls
+class StepBudget(Budget):
+    def __init__(self, max_steps):
+        self.max_steps, self.steps = max_steps, 0
+
+    def charge(self, usage):
+        self.steps += 1
+
+    def exhausted(self):
+        return self.steps &gt;= self.max_steps
+
+    def child(self, limit):  # fake: ignores the limit
+        return StepBudget(self.max_steps - self.steps)
+
+budget = StepBudget(max_steps=1)
+budget.charge(response.usage)
+print(&quot;exhausted:&quot;, budget.exhausted())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Events&lt;/h3&gt;
+&lt;p&gt;The loop emits an event at each fixed point of a step: before a model call, after a response, before a tool call and after a tool result. Handlers attached to the event bus observe these events, for logging, tracing or a user interface. Before a tool is executed, the bus can also intercept the call: allow it, deny it, or replace it with a changed call. Permission checks, human approval and safety limits are built this way, outside the loop.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart TB
+    Call[&quot;Tool call from the model&quot;] --&gt; Intercept{&quot;EventBus.intercept()&quot;}
+    Intercept --&gt;|&quot;allow&quot;| Tool[&quot;Tool executes&quot;]
+    Intercept --&gt;|&quot;replace&quot;| Changed[&quot;Tool executes the changed call&quot;]
+    Intercept --&gt;|&quot;deny&quot;| Error[&quot;Error result returned to the model&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 7: The three possible decisions of the event bus on a tool call.&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from dataclasses import dataclass
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+# endregion
+
+import asyncio
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+
+# Example: a bus that prints every event and denies rm
+class PrintAndGuard(EventBus):
+    async def emit(self, event):
+        print(event.kind, event.data)
+
+    async def intercept(self, call):
+        if call.name == &quot;bash&quot; and &quot;rm &quot; in call.input[&quot;command&quot;]:
+            return Deny(&quot;rm is not allowed&quot;)
+        return Allow()
+
+bus = PrintAndGuard()
+asyncio.run(bus.emit(Event(&quot;tool_call&quot;, {&quot;name&quot;: &quot;bash&quot;, &quot;command&quot;: &quot;ls&quot;})))
+call = ToolCall(&quot;c2&quot;, &quot;bash&quot;, {&quot;command&quot;: &quot;rm my-important-notes.txt&quot;})
+print(asyncio.run(bus.intercept(call)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;The harness as one object&lt;/h3&gt;
+&lt;p&gt;The harness collects these parts. Only the loop and the budget are required. Without tools the model can only answer in text, without a policy it sees the state as it is, and without an event bus nothing is observed and every tool call is allowed.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+class ReadFile(Tool):
+    definition = read_file
+
+    async def execute(self, input):
+        return ToolOutput([Text(&quot;Here is the content of the file.&quot;)])
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+class AddTime(ContextPolicy):
+    async def prepare(self, state, prompt):
+        system = f&quot;{prompt.system}\nTime: {datetime.now():%H:%M}&quot;
+        return Prompt(system, prompt.messages, prompt.tools)
+
+@dataclass
+class Outcome:
+    answer: str
+    # Why the run ended: a stop reason, an exhausted budget or cancellation.
+    reason: str
+    usage: Usage
+
+class Loop(ABC):
+    @abstractmethod
+    async def step(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; bool:
+        &quot;&quot;&quot;One model call and its tool calls. True if the run goes on.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def run(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; Outcome:
+        &quot;&quot;&quot;Take steps until a stop condition.&quot;&quot;&quot;
+
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+class SimpleLoop(Loop):
+    async def step(self, state, model, harness):
+        # Build the prompt from the state and the tool definitions,
+        # then let the context policy adjust it.
+        definitions = [t.definition for t in harness.tools]
+        prompt = Prompt(state.system, state.messages, definitions)
+        if harness.policy:
+            prompt = await harness.policy.prepare(state, prompt)
+
+        # Call the model and charge its usage to the budget and the state.
+        await emit(harness, &quot;model_call&quot;, prompt)
+        response = await model.complete(prompt)
+        await emit(harness, &quot;model_response&quot;, response)
+        harness.budget.charge(response.usage)
+        state.usage.input_tokens += response.usage.input_tokens
+        state.usage.output_tokens += response.usage.output_tokens
+        state.messages.append(Message(&quot;assistant&quot;, response.content))
+
+        # No tool calls: the model has finished, the run ends.
+        calls = [b for b in response.content if isinstance(b, ToolCall)]
+        if not calls:
+            return False
+
+        # Execute each tool call in order and collect the results.
+        # The event bus sees each call first and can deny or replace it.
+        tools = {t.definition.name: t for t in harness.tools}
+        results = []
+        for call in calls:
+            await emit(harness, &quot;tool_call&quot;, call)
+            decision = Allow()
+            if harness.events:
+                decision = await harness.events.intercept(call)
+            match decision:
+                case Deny(reason):
+                    output = ToolOutput([Text(reason)], is_error=True)
+                case Replace(changed):
+                    output = await tools[changed.name].execute(changed.input)
+                case _:
+                    output = await tools[call.name].execute(call.input)
+            result = ToolResult(call.id, output.content, output.is_error)
+            await emit(harness, &quot;tool_result&quot;, result)
+            results.append(result)
+
+        # All results go back to the model in one user message.
+        state.messages.append(Message(&quot;user&quot;, results))
+
+        # Take another step unless the budget is exhausted.
+        return not harness.budget.exhausted()
+
+    async def run(self, state, model, harness):
+        while await self.step(state, model, harness):
+            pass
+        reason = &quot;budget&quot; if harness.budget.exhausted() else &quot;end_turn&quot;
+        # The answer is the text of the last message, without thinking.
+        last = state.messages[-1].content
+        answer = &quot;&quot;.join(b.text for b in last if isinstance(b, Text))
+        return Outcome(answer, reason, state.usage)
+
+class Budget(ABC):
+    @abstractmethod
+    def charge(self, usage: Usage) -&gt; None: ...
+
+    @abstractmethod
+    def exhausted(self) -&gt; bool: ...
+
+    @abstractmethod
+    def child(self, limit: Usage) -&gt; &quot;Budget&quot;:
+        &quot;&quot;&quot;A budget for a sub-agent, bounded by what is left of this one.&quot;&quot;&quot;
+
+class StepBudget(Budget):
+    def __init__(self, max_steps):
+        self.max_steps, self.steps = max_steps, 0
+
+    def charge(self, usage):
+        self.steps += 1
+
+    def exhausted(self):
+        return self.steps &gt;= self.max_steps
+
+    def child(self, limit):  # fake: ignores the limit
+        return StepBudget(self.max_steps - self.steps)
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+# endregion
+
+from dataclasses import dataclass, field
+
+@dataclass
+class Harness:
+    loop: Loop
+    budget: Budget
+    tools: list[Tool] = field(default_factory=list)
+    policy: ContextPolicy | None = None
+    events: EventBus | None = None
+
+# Example: a harness made of the examples above
+harness = Harness(
+    loop=SimpleLoop(),
+    budget=StepBudget(max_steps=5),
+    tools=[ReadFile()],
+    policy=AddTime(),
+)
+print(harness)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;6. Agent&lt;/h2&gt;
+&lt;p&gt;An agent is a model, a system prompt and a harness, put together. It owns one state and continues it on every run, so the same agent can be given several tasks in a row and remember the earlier ones.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+read_file = ToolDefinition(
+    name=&quot;read_file&quot;,
+    description=&quot;Read a text file and return its content.&quot;,
+    input_schema={
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {&quot;path&quot;: {&quot;type&quot;: &quot;string&quot;}},
+        &quot;required&quot;: [&quot;path&quot;],
+    },
+)
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+class FakeModel(Model):
+    async def complete(self, prompt):
+        text = Text(&quot;Hi, I am a fake model.&quot;)
+        return Response([text], &quot;end_turn&quot;, Usage(40, 10, 0.0, 0.1))
+
+    async def stream(self, prompt):
+        yield await self.complete(prompt)
+
+    def capabilities(self):
+        return Capabilities(context_window=8_000, tool_calling=True)
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+class ReadFile(Tool):
+    definition = read_file
+
+    async def execute(self, input):
+        return ToolOutput([Text(&quot;Here is the content of the file.&quot;)])
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+class AddTime(ContextPolicy):
+    async def prepare(self, state, prompt):
+        system = f&quot;{prompt.system}\nTime: {datetime.now():%H:%M}&quot;
+        return Prompt(system, prompt.messages, prompt.tools)
+
+@dataclass
+class Outcome:
+    answer: str
+    # Why the run ended: a stop reason, an exhausted budget or cancellation.
+    reason: str
+    usage: Usage
+
+class Loop(ABC):
+    @abstractmethod
+    async def step(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; bool:
+        &quot;&quot;&quot;One model call and its tool calls. True if the run goes on.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def run(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; Outcome:
+        &quot;&quot;&quot;Take steps until a stop condition.&quot;&quot;&quot;
+
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+class SimpleLoop(Loop):
+    async def step(self, state, model, harness):
+        # Build the prompt from the state and the tool definitions,
+        # then let the context policy adjust it.
+        definitions = [t.definition for t in harness.tools]
+        prompt = Prompt(state.system, state.messages, definitions)
+        if harness.policy:
+            prompt = await harness.policy.prepare(state, prompt)
+
+        # Call the model and charge its usage to the budget and the state.
+        await emit(harness, &quot;model_call&quot;, prompt)
+        response = await model.complete(prompt)
+        await emit(harness, &quot;model_response&quot;, response)
+        harness.budget.charge(response.usage)
+        state.usage.input_tokens += response.usage.input_tokens
+        state.usage.output_tokens += response.usage.output_tokens
+        state.messages.append(Message(&quot;assistant&quot;, response.content))
+
+        # No tool calls: the model has finished, the run ends.
+        calls = [b for b in response.content if isinstance(b, ToolCall)]
+        if not calls:
+            return False
+
+        # Execute each tool call in order and collect the results.
+        # The event bus sees each call first and can deny or replace it.
+        tools = {t.definition.name: t for t in harness.tools}
+        results = []
+        for call in calls:
+            await emit(harness, &quot;tool_call&quot;, call)
+            decision = Allow()
+            if harness.events:
+                decision = await harness.events.intercept(call)
+            match decision:
+                case Deny(reason):
+                    output = ToolOutput([Text(reason)], is_error=True)
+                case Replace(changed):
+                    output = await tools[changed.name].execute(changed.input)
+                case _:
+                    output = await tools[call.name].execute(call.input)
+            result = ToolResult(call.id, output.content, output.is_error)
+            await emit(harness, &quot;tool_result&quot;, result)
+            results.append(result)
+
+        # All results go back to the model in one user message.
+        state.messages.append(Message(&quot;user&quot;, results))
+
+        # Take another step unless the budget is exhausted.
+        return not harness.budget.exhausted()
+
+    async def run(self, state, model, harness):
+        while await self.step(state, model, harness):
+            pass
+        reason = &quot;budget&quot; if harness.budget.exhausted() else &quot;end_turn&quot;
+        # The answer is the text of the last message, without thinking.
+        last = state.messages[-1].content
+        answer = &quot;&quot;.join(b.text for b in last if isinstance(b, Text))
+        return Outcome(answer, reason, state.usage)
+
+class Budget(ABC):
+    @abstractmethod
+    def charge(self, usage: Usage) -&gt; None: ...
+
+    @abstractmethod
+    def exhausted(self) -&gt; bool: ...
+
+    @abstractmethod
+    def child(self, limit: Usage) -&gt; &quot;Budget&quot;:
+        &quot;&quot;&quot;A budget for a sub-agent, bounded by what is left of this one.&quot;&quot;&quot;
+
+class StepBudget(Budget):
+    def __init__(self, max_steps):
+        self.max_steps, self.steps = max_steps, 0
+
+    def charge(self, usage):
+        self.steps += 1
+
+    def exhausted(self):
+        return self.steps &gt;= self.max_steps
+
+    def child(self, limit):  # fake: ignores the limit
+        return StepBudget(self.max_steps - self.steps)
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+
+@dataclass
+class Harness:
+    loop: Loop
+    budget: Budget
+    tools: list[Tool] = field(default_factory=list)
+    policy: ContextPolicy | None = None
+    events: EventBus | None = None
+
+harness = Harness(
+    loop=SimpleLoop(),
+    budget=StepBudget(max_steps=5),
+    tools=[ReadFile()],
+    policy=AddTime(),
+)
+# endregion
+
+import asyncio
+
+class Agent:
+    def __init__(self, model: Model, system: str, harness: Harness):
+        self.model, self.harness = model, harness
+        self.state = RunState(system, [], Usage(0, 0, 0.0, 0.0), {})
+
+    async def run(self, task: str) -&gt; Outcome:
+        &quot;&quot;&quot;Append the task to the state, then run the loop until it stops.&quot;&quot;&quot;
+        self.state.messages.append(Message(&quot;user&quot;, [Text(task)]))
+        harness = self.harness
+        return await harness.loop.run(self.state, self.model, harness)
+
+# Example: an agent made of the examples above
+agent = Agent(FakeModel(), &quot;You are a helpful assistant.&quot;, harness)
+print(asyncio.run(agent.run(&quot;How many lines does notes.txt have?&quot;)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;flowchart&quot;: {&quot;nodeSpacing&quot;: 20, &quot;rankSpacing&quot;: 20, &quot;subGraphTitleMargin&quot;: {&quot;top&quot;: 12, &quot;bottom&quot;: 12}}}}%%
+flowchart TB
+    Model[&quot;Model&quot;]
+    System[&quot;System prompt&quot;]
+    subgraph Harness
+        direction TB
+        Loop[&quot;Loop&quot;]
+        Budget[&quot;Budget&quot;]
+        Policy[&quot;ContextPolicy&quot;]
+        Events[&quot;EventBus&quot;]
+        Tools[&quot;Tools&quot;]
+    end
+    Model ~~~ Harness
+    System ~~~ Harness
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 8: An agent as a set of replaceable blocks.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Each box in this diagram is a block that can be replaced by another implementation of the same interface.&lt;/p&gt;
+&lt;h2&gt;7. Composition&lt;/h2&gt;
+&lt;p&gt;An agent can be used as a tool by another agent. The handler of such a tool starts a new run of the inner agent with a fresh state, and returns its final answer as the tool result. For the outer agent, the inner one is a tool like any other.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;flowchart TB
+    Parent[&quot;Parent agent&amp;#x3C;br/&gt;strong model&quot;]
+    Parent --&gt; Bash[&quot;bash&quot;]
+    Parent --&gt; Read[&quot;read_file&quot;]
+    Parent --&gt; Research[&quot;research tool&quot;]
+    Research --&gt; Sub[&quot;Research agent&amp;#x3C;br/&gt;cheap model, own budget&quot;]
+    Sub --&gt; Fetch[&quot;web_fetch&quot;]
+    Sub --&gt; Search[&quot;web_search&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 9: A parent agent that uses a research agent as a tool.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;This gives sub-agents, parallel sub-tasks, recursion and a different model for each sub-agent, with no new concepts. A sub-agent gets its own budget, created with &lt;code&gt;Budget.child()&lt;/code&gt; and bounded by what is left of the parent&apos;s, so a runaway sub-agent cannot use up the parent.&lt;/p&gt;
+&lt;h2&gt;8. How the components work together&lt;/h2&gt;
+&lt;p&gt;The diagram follows one step of the loop from top to bottom. Each box is a component and each label is the call or the data passed to the next one.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart TB
+    Client([&quot;Client&quot;]) --&gt;|&quot;run(task)&quot;| Agent[&quot;Agent&quot;]
+    Agent --&gt;|&quot;task appended as a user message&quot;| State
+
+    subgraph Loop[&quot;Loop: one step&quot;]
+        State[(&quot;State&quot;)]
+        Policy[&quot;ContextPolicy&amp;#x3C;br/&gt;prepare(state, prompt)&quot;]
+        Model[&quot;Model&amp;#x3C;br/&gt;complete(prompt)&quot;]
+        Budget[&quot;Budget&amp;#x3C;br/&gt;charge(usage)&quot;]
+        Events[&quot;EventBus&amp;#x3C;br/&gt;emit(event) / intercept(call)&quot;]
+        Tools[&quot;Tools&amp;#x3C;br/&gt;execute(input)&quot;]
+
+        State --&gt;|&quot;prompt built from the state&quot;| Policy
+        Policy --&gt;|&quot;prompt&quot;| Model
+        Model --&gt;|&quot;response, appended to the state&quot;| Budget
+        Budget --&gt;|&quot;tool calls&quot;| Tools
+        Events -.-&gt;|&quot;allow / deny / modify&amp;#x3C;br/&gt;each call and result&quot;| Tools
+    end
+
+    Tools -.-&gt;|&quot;results appended, next step&quot;| State
+    Tools --&gt;|&quot;run(task)&quot;| Sub[&quot;Sub-agent&amp;#x3C;br/&gt;same components&quot;]
+    Budget -.-&gt;|&quot;no tool calls or budget exhausted&quot;| Outcome([&quot;Outcome&amp;#x3C;br/&gt;returned to the client&quot;])
+    Tools ~~~ Outcome
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 10: One step of the loop through all components.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;One run:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The client gives the agent a task. The agent appends it to the state as a user message and starts the loop.&lt;/li&gt;
+&lt;li&gt;The loop builds a prompt from the state and the tool definitions, and the context policy adjusts it.&lt;/li&gt;
+&lt;li&gt;The model returns a response. The loop appends it to the state and charges its usage to the budget.&lt;/li&gt;
+&lt;li&gt;If the response contains tool calls, the loop asks the event bus to intercept each call, executes the allowed ones, lets the bus intercept each result and appends the results to the state.&lt;/li&gt;
+&lt;li&gt;Steps 2 to 4 repeat until a stop condition is reached.&lt;/li&gt;
+&lt;li&gt;The loop returns the outcome: the final answer, the reason the run ended and the usage.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;9. Example: a home assistant&lt;/h2&gt;
+&lt;p&gt;The home assistant is an agent that controls a home on request. It turns lights on and off, plays music, reads the temperature inside and outside, and checks the weather forecast.&lt;/p&gt;
+&lt;h3&gt;What it does&lt;/h3&gt;
+&lt;p&gt;A request from a resident goes into the assistant. Actions in the home and a reply come out of it.&lt;/p&gt;
+&lt;p&gt;A simple command, one tool call:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;21:05  user       Turn off the living room lights.
+21:05  assistant  lights_off(&quot;living room&quot;)
+21:05  assistant  The living room lights are off.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A question that needs several readings before the answer:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;13:20  user       Should I open the window?
+13:20  assistant  get_temperature(&quot;inside&quot;): 24°C
+13:20  assistant  get_temperature(&quot;outside&quot;): 18°C
+13:20  assistant  get_forecast(&quot;today&quot;): sunny, no rain
+13:20  assistant  Yes. It is 24°C inside and 18°C outside, and no rain is expected today.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A request by mood. &lt;code&gt;play_music&lt;/code&gt; needs a song name, so the assistant first asks the DJ sub-agent to pick one:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;19:30  user       Play something calm.
+19:30  assistant  pick_song(&quot;something calm&quot;): &quot;Clair de Lune&quot; by Debussy
+19:30  assistant  play_music(&quot;Clair de Lune&quot;)
+19:30  assistant  Playing &quot;Clair de Lune&quot; by Debussy.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A request blocked by a guard rule:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;23:10  user       Play &quot;Thunderstruck&quot;.
+23:10  assistant  play_music(&quot;Thunderstruck&quot;)
+23:10  guard      denied: quiet hours, 22:00 to 07:00
+23:10  assistant  It is quiet hours until 07:00, so I cannot play music now.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Components&lt;/h3&gt;
+&lt;p&gt;Every request from a resident becomes a task for &lt;code&gt;run()&lt;/code&gt;, and the final answer of the run is the reply.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: Claude Haiku 5.5 from the Anthropic API.&lt;/li&gt;
+&lt;li&gt;System prompt: &lt;code&gt;ASSISTANT_PROMPT&lt;/code&gt;, the role of the assistant and the morning routine.&lt;/li&gt;
+&lt;li&gt;Policy: &lt;code&gt;HomeStatusPolicy&lt;/code&gt;, adds the current time and the state of the home to every prompt.&lt;/li&gt;
+&lt;li&gt;Budget: 8 steps per request.&lt;/li&gt;
+&lt;li&gt;Events: &lt;code&gt;HomeEvents&lt;/code&gt;, a log of every tool call and result, and one guard rule: no music during quiet hours, from 22:00 to 07:00.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The tools:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;lights_on(room)&lt;/code&gt; and &lt;code&gt;lights_off(room)&lt;/code&gt;: switch the lights in one room: kitchen, living room or bedroom.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;play_music(song)&lt;/code&gt;: plays a song by its name.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;stop_music()&lt;/code&gt;: stops the music.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;get_temperature(where)&lt;/code&gt;: the temperature &quot;inside&quot; or &quot;outside&quot;, in °C.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;get_forecast(day)&lt;/code&gt;: the weather forecast for &quot;today&quot; or &quot;tomorrow&quot;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pick_song(task)&lt;/code&gt;: a sub-agent, the DJ, with no tools and a one-step budget. It turns a task such as &quot;something calm&quot; into a song name.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;%%{init: {&quot;themeCSS&quot;: &quot;.edgeLabel, .edgeLabel p, .labelBkg { background-color: transparent; }&quot;}}%%
+flowchart TB
+    User([&quot;Resident&amp;#x3C;br/&gt;requests&quot;]) --&gt;|&quot;run(task)&quot;| Assistant
+
+    Assistant[&quot;Home assistant&amp;#x3C;br/&gt;Claude Haiku 5.5&quot;]
+    Assistant --&gt; HarnessParts
+    Assistant --&gt; ToolBox
+
+    subgraph HarnessParts[&quot;Harness&quot;]
+        direction TB
+        Budget[&quot;Budget&amp;#x3C;br/&gt;8 steps per request&quot;]
+        Policy[&quot;HomeStatusPolicy&amp;#x3C;br/&gt;time, lights, music&quot;]
+        Guard[&quot;HomeEvents&amp;#x3C;br/&gt;log, quiet hours for music&quot;]
+        Budget ~~~ Policy ~~~ Guard
+    end
+
+    subgraph ToolBox[&quot;Tools&quot;]
+        direction TB
+        LightTools[&quot;Light tools&amp;#x3C;br/&gt;lights_on, lights_off&quot;]
+        MusicTools[&quot;Music tools&amp;#x3C;br/&gt;play_music, stop_music&quot;]
+        SensorTools[&quot;Sensor and weather tools&amp;#x3C;br/&gt;get_temperature, get_forecast&quot;]
+        SongTool[&quot;pick_song&quot;]
+        DJ[&quot;DJ agent&amp;#x3C;br/&gt;Claude Haiku 5.5, 1-step budget&quot;]
+        LightTools ~~~ MusicTools ~~~ SensorTools ~~~ SongTool --&gt; DJ
+    end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 11: The components of the home assistant.&lt;/em&gt;&lt;/p&gt;
+&lt;h3&gt;Prompts&lt;/h3&gt;
+&lt;p&gt;The system prompts of the assistant and of the DJ:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;ASSISTANT_PROMPT = &quot;&quot;&quot;
+You are a home assistant. You control the lights and the music in the home and you report the temperature and the weather.
+
+The home has three rooms: kitchen, living room and bedroom. The current time and the state of the home are given below.
+
+To play music, you need a song name. If the resident names a song, play it. If the resident describes a mood or an occasion, ask pick_song for a song first.
+
+When the resident says good morning, run the morning routine:
+1. Read the temperature inside and outside and the forecast for today.
+2. Turn on the kitchen lights.
+3. Play a calm song for the morning.
+4. Answer with a short briefing: the temperatures, the forecast and one practical tip.
+
+Answer in one to three short sentences, in plain text. If a tool call is denied, tell the resident why.
+&quot;&quot;&quot;
+
+DJ_PROMPT = &quot;&quot;&quot;
+You pick songs for a home music player.
+
+You receive a request, such as a mood or an occasion. Pick one well-known song that fits it.
+
+Answer with the song name and the artist only, for example: &quot;Clair de Lune&quot; by Debussy.
+&quot;&quot;&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;The home&lt;/h3&gt;
+&lt;p&gt;The example runs without real devices. &lt;code&gt;Home&lt;/code&gt; simulates them: the lights in each room, the song that is playing, the two thermometers and the forecast. It also holds the current time, so that a whole day can be run in a few seconds. The tools, the policy and the event bus below all read or change the same &lt;code&gt;Home&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;from dataclasses import dataclass, field
+from datetime import datetime
+
+@dataclass
+class Home:
+    &quot;&quot;&quot;A simulated home: the devices the tools act on.&quot;&quot;&quot;
+    now: datetime
+    lights: dict[str, bool] = field(default_factory=lambda: {
+        &quot;kitchen&quot;: False, &quot;living room&quot;: False, &quot;bedroom&quot;: False,
+    })
+    song: str | None = None
+    temperature: dict[str, int] = field(default_factory=lambda: {
+        &quot;inside&quot;: 21, &quot;outside&quot;: 5,
+    })
+    forecast: dict[str, str] = field(default_factory=lambda: {
+        &quot;today&quot;: &quot;cloudy, rain from 14:00 to 18:00, high 8°C&quot;,
+        &quot;tomorrow&quot;: &quot;sunny, high 11°C&quot;,
+    })
+
+# Example: the home on Monday morning, with everything off
+home = Home(now=datetime(2026, 11, 23, 7, 15))
+print(home)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Tools&lt;/h3&gt;
+&lt;p&gt;Each tool is a definition and a handler that acts on the home. The &lt;code&gt;enum&lt;/code&gt; lists in the input schemas tell the model the only valid rooms, places and days.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+@dataclass
+class Home:
+    &quot;&quot;&quot;A simulated home: the devices the tools act on.&quot;&quot;&quot;
+    now: datetime
+    lights: dict[str, bool] = field(default_factory=lambda: {
+        &quot;kitchen&quot;: False, &quot;living room&quot;: False, &quot;bedroom&quot;: False,
+    })
+    song: str | None = None
+    temperature: dict[str, int] = field(default_factory=lambda: {
+        &quot;inside&quot;: 21, &quot;outside&quot;: 5,
+    })
+    forecast: dict[str, str] = field(default_factory=lambda: {
+        &quot;today&quot;: &quot;cloudy, rain from 14:00 to 18:00, high 8°C&quot;,
+        &quot;tomorrow&quot;: &quot;sunny, high 11°C&quot;,
+    })
+# endregion
+
+import asyncio
+
+ROOM = {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;kitchen&quot;, &quot;living room&quot;, &quot;bedroom&quot;]}
+
+class HomeTool(Tool):
+    def __init__(self, home: Home):
+        self.home = home
+
+class LightsOn(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;lights_on&quot;,
+        description=&quot;Turn on the lights in one room.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;room&quot;: ROOM},
+            &quot;required&quot;: [&quot;room&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.lights[input[&quot;room&quot;]] = True
+        return ToolOutput([Text(f&quot;The {input[&apos;room&apos;]} lights are on.&quot;)])
+
+class LightsOff(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;lights_off&quot;,
+        description=&quot;Turn off the lights in one room.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;room&quot;: ROOM},
+            &quot;required&quot;: [&quot;room&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.lights[input[&quot;room&quot;]] = False
+        return ToolOutput([Text(f&quot;The {input[&apos;room&apos;]} lights are off.&quot;)])
+
+class PlayMusic(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;play_music&quot;,
+        description=&quot;Play a song by its name.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;song&quot;: {&quot;type&quot;: &quot;string&quot;}},
+            &quot;required&quot;: [&quot;song&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.song = input[&quot;song&quot;]
+        return ToolOutput([Text(f&quot;Playing {input[&apos;song&apos;]}.&quot;)])
+
+class StopMusic(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;stop_music&quot;,
+        description=&quot;Stop the music.&quot;,
+        input_schema={&quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {}},
+    )
+
+    async def execute(self, input):
+        if self.home.song is None:
+            return ToolOutput([Text(&quot;No music is playing.&quot;)])
+        self.home.song = None
+        return ToolOutput([Text(&quot;The music is stopped.&quot;)])
+
+class GetTemperature(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;get_temperature&quot;,
+        description=&quot;Read the temperature inside or outside the home, in °C.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;where&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;inside&quot;, &quot;outside&quot;]},
+            },
+            &quot;required&quot;: [&quot;where&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        degrees = self.home.temperature[input[&quot;where&quot;]]
+        return ToolOutput([Text(f&quot;{degrees}°C&quot;)])
+
+class GetForecast(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;get_forecast&quot;,
+        description=&quot;Get the weather forecast for today or tomorrow.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;day&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;today&quot;, &quot;tomorrow&quot;]},
+            },
+            &quot;required&quot;: [&quot;day&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        return ToolOutput([Text(self.home.forecast[input[&quot;day&quot;]])])
+
+# Example: the tools used directly, without a model
+home = Home(now=datetime(2026, 11, 23, 7, 15))
+print(asyncio.run(LightsOn(home).execute({&quot;room&quot;: &quot;kitchen&quot;})))
+print(asyncio.run(GetTemperature(home).execute({&quot;where&quot;: &quot;outside&quot;})))
+print(asyncio.run(PlayMusic(home).execute({&quot;song&quot;: &quot;Here Comes the Sun&quot;})))
+print(home.lights, home.song)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Context policy&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;HomeStatusPolicy&lt;/code&gt; adds the current time and the state of the home to the system prompt before every model call. The model knows which lights are on without calling a tool, and the state in the prompt is always current, even within one run.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+@dataclass
+class Home:
+    &quot;&quot;&quot;A simulated home: the devices the tools act on.&quot;&quot;&quot;
+    now: datetime
+    lights: dict[str, bool] = field(default_factory=lambda: {
+        &quot;kitchen&quot;: False, &quot;living room&quot;: False, &quot;bedroom&quot;: False,
+    })
+    song: str | None = None
+    temperature: dict[str, int] = field(default_factory=lambda: {
+        &quot;inside&quot;: 21, &quot;outside&quot;: 5,
+    })
+    forecast: dict[str, str] = field(default_factory=lambda: {
+        &quot;today&quot;: &quot;cloudy, rain from 14:00 to 18:00, high 8°C&quot;,
+        &quot;tomorrow&quot;: &quot;sunny, high 11°C&quot;,
+    })
+# endregion
+
+import asyncio
+
+class HomeStatusPolicy(ContextPolicy):
+    &quot;&quot;&quot;Adds the time and the state of the home to the system prompt.&quot;&quot;&quot;
+
+    def __init__(self, home: Home):
+        self.home = home
+
+    async def prepare(self, state, prompt):
+        lights = [room for room, on in self.home.lights.items() if on]
+        status = (
+            f&quot;Time: {self.home.now:%A %H:%M}\n&quot;
+            f&quot;Lights on: {&apos;, &apos;.join(lights) or &apos;none&apos;}\n&quot;
+            f&quot;Music: {self.home.song or &apos;not playing&apos;}&quot;
+        )
+        system = f&quot;{prompt.system}\n\n{status}&quot;
+        return Prompt(system, prompt.messages, prompt.tools)
+
+# Example: the system prompt the model sees on Monday morning
+home = Home(now=datetime(2026, 11, 23, 7, 15))
+home.lights[&quot;kitchen&quot;] = True
+prompt = Prompt(&quot;You are a home assistant.&quot;, [], [])
+print(asyncio.run(HomeStatusPolicy(home).prepare(None, prompt)).system)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Events&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;HomeEvents&lt;/code&gt; does two jobs. It prints a log line for every tool call and every result, and it denies &lt;code&gt;play_music&lt;/code&gt; during quiet hours. A denied call is not executed: the model gets an error result with the reason, and tells the resident.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Literal
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+
+@dataclass
+class Home:
+    &quot;&quot;&quot;A simulated home: the devices the tools act on.&quot;&quot;&quot;
+    now: datetime
+    lights: dict[str, bool] = field(default_factory=lambda: {
+        &quot;kitchen&quot;: False, &quot;living room&quot;: False, &quot;bedroom&quot;: False,
+    })
+    song: str | None = None
+    temperature: dict[str, int] = field(default_factory=lambda: {
+        &quot;inside&quot;: 21, &quot;outside&quot;: 5,
+    })
+    forecast: dict[str, str] = field(default_factory=lambda: {
+        &quot;today&quot;: &quot;cloudy, rain from 14:00 to 18:00, high 8°C&quot;,
+        &quot;tomorrow&quot;: &quot;sunny, high 11°C&quot;,
+    })
+# endregion
+
+import asyncio
+import json
+
+class HomeEvents(EventBus):
+    &quot;&quot;&quot;Logs every tool call and result, and keeps the quiet hours.&quot;&quot;&quot;
+
+    def __init__(self, home: Home):
+        self.home = home
+
+    def log(self, kind, text):
+        print(f&quot;{self.home.now:%H:%M}  {kind:&amp;#x3C;9}  {text}&quot;)
+
+    async def emit(self, event):
+        match event.kind, event.data:
+            case &quot;tool_call&quot;, call:
+                args = &quot;, &quot;.join(
+                    f&quot;{k}={json.dumps(v, ensure_ascii=False)}&quot;
+                    for k, v in call.input.items()
+                )
+                self.log(&quot;tool&quot;, f&quot;{call.name}({args})&quot;)
+            case &quot;tool_result&quot;, result:
+                prefix = &quot;denied: &quot; if result.is_error else &quot;&quot;
+                self.log(&quot;result&quot;, prefix + result.content[0].text)
+
+    async def intercept(self, call):
+        hour = self.home.now.hour
+        if call.name == &quot;play_music&quot; and (hour &gt;= 22 or hour &amp;#x3C; 7):
+            return Deny(&quot;Quiet hours, 22:00 to 07:00. No music now.&quot;)
+        return Allow()
+
+# Example: the same call at 23:10 and at 09:00
+home = Home(now=datetime(2026, 11, 23, 23, 10))
+events = HomeEvents(home)
+call = ToolCall(&quot;c1&quot;, &quot;play_music&quot;, {&quot;song&quot;: &quot;Thunderstruck&quot;})
+asyncio.run(events.emit(Event(&quot;tool_call&quot;, call)))
+print(asyncio.run(events.intercept(call)))
+home.now = datetime(2026, 11, 23, 9, 0)
+print(asyncio.run(events.intercept(call)))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;The DJ as a tool&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;AgentTool&lt;/code&gt; turns an agent into a tool, as described in section 7. It starts a new agent for every call, so each call runs with a fresh state and a fresh budget. The example runs the DJ on a fake model.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+@dataclass
+class Outcome:
+    answer: str
+    # Why the run ended: a stop reason, an exhausted budget or cancellation.
+    reason: str
+    usage: Usage
+
+class Loop(ABC):
+    @abstractmethod
+    async def step(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; bool:
+        &quot;&quot;&quot;One model call and its tool calls. True if the run goes on.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def run(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; Outcome:
+        &quot;&quot;&quot;Take steps until a stop condition.&quot;&quot;&quot;
+
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+class SimpleLoop(Loop):
+    async def step(self, state, model, harness):
+        # Build the prompt from the state and the tool definitions,
+        # then let the context policy adjust it.
+        definitions = [t.definition for t in harness.tools]
+        prompt = Prompt(state.system, state.messages, definitions)
+        if harness.policy:
+            prompt = await harness.policy.prepare(state, prompt)
+
+        # Call the model and charge its usage to the budget and the state.
+        await emit(harness, &quot;model_call&quot;, prompt)
+        response = await model.complete(prompt)
+        await emit(harness, &quot;model_response&quot;, response)
+        harness.budget.charge(response.usage)
+        state.usage.input_tokens += response.usage.input_tokens
+        state.usage.output_tokens += response.usage.output_tokens
+        state.messages.append(Message(&quot;assistant&quot;, response.content))
+
+        # No tool calls: the model has finished, the run ends.
+        calls = [b for b in response.content if isinstance(b, ToolCall)]
+        if not calls:
+            return False
+
+        # Execute each tool call in order and collect the results.
+        # The event bus sees each call first and can deny or replace it.
+        tools = {t.definition.name: t for t in harness.tools}
+        results = []
+        for call in calls:
+            await emit(harness, &quot;tool_call&quot;, call)
+            decision = Allow()
+            if harness.events:
+                decision = await harness.events.intercept(call)
+            match decision:
+                case Deny(reason):
+                    output = ToolOutput([Text(reason)], is_error=True)
+                case Replace(changed):
+                    output = await tools[changed.name].execute(changed.input)
+                case _:
+                    output = await tools[call.name].execute(call.input)
+            result = ToolResult(call.id, output.content, output.is_error)
+            await emit(harness, &quot;tool_result&quot;, result)
+            results.append(result)
+
+        # All results go back to the model in one user message.
+        state.messages.append(Message(&quot;user&quot;, results))
+
+        # Take another step unless the budget is exhausted.
+        return not harness.budget.exhausted()
+
+    async def run(self, state, model, harness):
+        while await self.step(state, model, harness):
+            pass
+        reason = &quot;budget&quot; if harness.budget.exhausted() else &quot;end_turn&quot;
+        # The answer is the text of the last message, without thinking.
+        last = state.messages[-1].content
+        answer = &quot;&quot;.join(b.text for b in last if isinstance(b, Text))
+        return Outcome(answer, reason, state.usage)
+
+class Budget(ABC):
+    @abstractmethod
+    def charge(self, usage: Usage) -&gt; None: ...
+
+    @abstractmethod
+    def exhausted(self) -&gt; bool: ...
+
+    @abstractmethod
+    def child(self, limit: Usage) -&gt; &quot;Budget&quot;:
+        &quot;&quot;&quot;A budget for a sub-agent, bounded by what is left of this one.&quot;&quot;&quot;
+
+class StepBudget(Budget):
+    def __init__(self, max_steps):
+        self.max_steps, self.steps = max_steps, 0
+
+    def charge(self, usage):
+        self.steps += 1
+
+    def exhausted(self):
+        return self.steps &gt;= self.max_steps
+
+    def child(self, limit):  # fake: ignores the limit
+        return StepBudget(self.max_steps - self.steps)
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+
+@dataclass
+class Harness:
+    loop: Loop
+    budget: Budget
+    tools: list[Tool] = field(default_factory=list)
+    policy: ContextPolicy | None = None
+    events: EventBus | None = None
+
+class Agent:
+    def __init__(self, model: Model, system: str, harness: Harness):
+        self.model, self.harness = model, harness
+        self.state = RunState(system, [], Usage(0, 0, 0.0, 0.0), {})
+
+    async def run(self, task: str) -&gt; Outcome:
+        &quot;&quot;&quot;Append the task to the state, then run the loop until it stops.&quot;&quot;&quot;
+        self.state.messages.append(Message(&quot;user&quot;, [Text(task)]))
+        harness = self.harness
+        return await harness.loop.run(self.state, self.model, harness)
+
+DJ_PROMPT = &quot;&quot;&quot;
+You pick songs for a home music player.
+
+You receive a request, such as a mood or an occasion. Pick one well-known song that fits it.
+
+Answer with the song name and the artist only, for example: &quot;Clair de Lune&quot; by Debussy.
+&quot;&quot;&quot;
+# endregion
+
+import asyncio
+
+class AgentTool(Tool):
+    &quot;&quot;&quot;A tool that runs a new agent for each call and returns its answer.&quot;&quot;&quot;
+
+    def __init__(self, name, description, new_agent):
+        self.name, self.description = name, description
+        self.new_agent = new_agent
+
+    @property
+    def definition(self):
+        return ToolDefinition(
+            name=self.name,
+            description=self.description,
+            input_schema={
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {&quot;task&quot;: {&quot;type&quot;: &quot;string&quot;}},
+                &quot;required&quot;: [&quot;task&quot;],
+            },
+        )
+
+    async def execute(self, input):
+        outcome = await self.new_agent().run(input[&quot;task&quot;])
+        return ToolOutput([Text(outcome.answer)])
+
+# Example: the DJ on a fake model that always picks the same song
+class FakeDJModel(Model):
+    async def complete(self, prompt):
+        text = Text(&apos;&quot;Here Comes the Sun&quot; by The Beatles&apos;)
+        return Response([text], &quot;end_turn&quot;, Usage(60, 12, 0.0, 0.1))
+
+    async def stream(self, prompt):
+        yield await self.complete(prompt)
+
+    def capabilities(self):
+        return Capabilities(context_window=8_000, tool_calling=False)
+
+def new_dj():
+    return Agent(
+        FakeDJModel(),
+        DJ_PROMPT,
+        Harness(loop=SimpleLoop(), budget=StepBudget(max_steps=1)),
+    )
+
+pick_song = AgentTool(
+    &quot;pick_song&quot;,
+    &quot;Pick a song that fits a mood or an occasion. Returns its name and artist.&quot;,
+    new_dj,
+)
+print(pick_song.definition)
+print(asyncio.run(pick_song.execute({&quot;task&quot;: &quot;a calm song for the morning&quot;})))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Composition&lt;/h3&gt;
+&lt;p&gt;The whole assistant, put together from the blocks above and run on Claude Haiku 5.5. Both agents share one model object. Each request starts a new assistant with a fresh state and a fresh 8-step budget, and the home keeps its state between requests.&lt;/p&gt;
+&lt;p&gt;Running the example requires an Anthropic API key in the &lt;code&gt;ANTHROPIC_API_KEY&lt;/code&gt; environment variable. The whole day costs less than one cent.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;# region Needed from earlier sections
+import asyncio
+import json
+import time
+import urllib.request
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Literal
+
+@dataclass
+class Text:
+    text: str
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    input: dict
+
+@dataclass
+class ToolResult:
+    call_id: str
+    content: list[Text]
+    is_error: bool = False
+
+@dataclass
+class Thinking:
+    text: str
+
+ContentBlock = Text | ToolCall | ToolResult | Thinking
+
+@dataclass
+class Message:
+    role: Literal[&quot;user&quot;, &quot;assistant&quot;]
+    content: list[ContentBlock]
+
+@dataclass
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: dict  # JSON Schema of the input
+
+@dataclass
+class Prompt:
+    system: str
+    messages: list[Message]
+    tools: list[ToolDefinition]
+
+StopReason = Literal[
+    &quot;end_turn&quot;,    # the model has finished
+    &quot;tool_use&quot;,    # the model asks for tool calls
+    &quot;max_tokens&quot;,  # the model was cut off at the output limit
+    &quot;refusal&quot;,     # the model declined to continue
+]
+
+@dataclass
+class Usage:
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    seconds: float
+
+@dataclass
+class Response:
+    content: list[ContentBlock]
+    stop_reason: StopReason
+    usage: Usage
+
+@dataclass
+class Capabilities:
+    context_window: int
+    tool_calling: bool
+
+ModelEvent = str | Response
+
+class Model(ABC):
+    @abstractmethod
+    async def complete(self, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt and wait for the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def stream(self, prompt: Prompt) -&gt; AsyncIterator[ModelEvent]:
+        &quot;&quot;&quot;Yield the response as it is produced, then the whole response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def capabilities(self) -&gt; Capabilities:
+        &quot;&quot;&quot;What the model supports: context window, tools, images.&quot;&quot;&quot;
+
+@dataclass
+class ToolOutput:
+    content: list[Text]
+    is_error: bool = False
+
+class Tool(ABC):
+    @property
+    @abstractmethod
+    def definition(self) -&gt; ToolDefinition:
+        &quot;&quot;&quot;Name, description and input schema, sent to the model.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def execute(self, input: dict) -&gt; ToolOutput:
+        &quot;&quot;&quot;Do the work. Return errors as output, with is_error set.&quot;&quot;&quot;
+
+@dataclass
+class RunState:
+    system: str
+    messages: list[Message]
+    usage: Usage
+    metadata: dict
+
+class ContextPolicy(ABC):
+    @abstractmethod
+    async def prepare(self, state: RunState, prompt: Prompt) -&gt; Prompt:
+        &quot;&quot;&quot;Return the prompt the model sees on this call.&quot;&quot;&quot;
+
+@dataclass
+class Outcome:
+    answer: str
+    # Why the run ended: a stop reason, an exhausted budget or cancellation.
+    reason: str
+    usage: Usage
+
+class Loop(ABC):
+    @abstractmethod
+    async def step(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; bool:
+        &quot;&quot;&quot;One model call and its tool calls. True if the run goes on.&quot;&quot;&quot;
+
+    @abstractmethod
+    async def run(
+        self, state: RunState, model: Model, harness: &quot;Harness&quot;
+    ) -&gt; Outcome:
+        &quot;&quot;&quot;Take steps until a stop condition.&quot;&quot;&quot;
+
+# The event bus is defined in the Events section below.
+async def emit(harness, kind, data):
+    if harness.events:
+        await harness.events.emit(Event(kind, data))
+
+class SimpleLoop(Loop):
+    async def step(self, state, model, harness):
+        # Build the prompt from the state and the tool definitions,
+        # then let the context policy adjust it.
+        definitions = [t.definition for t in harness.tools]
+        prompt = Prompt(state.system, state.messages, definitions)
+        if harness.policy:
+            prompt = await harness.policy.prepare(state, prompt)
+
+        # Call the model and charge its usage to the budget and the state.
+        await emit(harness, &quot;model_call&quot;, prompt)
+        response = await model.complete(prompt)
+        await emit(harness, &quot;model_response&quot;, response)
+        harness.budget.charge(response.usage)
+        state.usage.input_tokens += response.usage.input_tokens
+        state.usage.output_tokens += response.usage.output_tokens
+        state.messages.append(Message(&quot;assistant&quot;, response.content))
+
+        # No tool calls: the model has finished, the run ends.
+        calls = [b for b in response.content if isinstance(b, ToolCall)]
+        if not calls:
+            return False
+
+        # Execute each tool call in order and collect the results.
+        # The event bus sees each call first and can deny or replace it.
+        tools = {t.definition.name: t for t in harness.tools}
+        results = []
+        for call in calls:
+            await emit(harness, &quot;tool_call&quot;, call)
+            decision = Allow()
+            if harness.events:
+                decision = await harness.events.intercept(call)
+            match decision:
+                case Deny(reason):
+                    output = ToolOutput([Text(reason)], is_error=True)
+                case Replace(changed):
+                    output = await tools[changed.name].execute(changed.input)
+                case _:
+                    output = await tools[call.name].execute(call.input)
+            result = ToolResult(call.id, output.content, output.is_error)
+            await emit(harness, &quot;tool_result&quot;, result)
+            results.append(result)
+
+        # All results go back to the model in one user message.
+        state.messages.append(Message(&quot;user&quot;, results))
+
+        # Take another step unless the budget is exhausted.
+        return not harness.budget.exhausted()
+
+    async def run(self, state, model, harness):
+        while await self.step(state, model, harness):
+            pass
+        reason = &quot;budget&quot; if harness.budget.exhausted() else &quot;end_turn&quot;
+        # The answer is the text of the last message, without thinking.
+        last = state.messages[-1].content
+        answer = &quot;&quot;.join(b.text for b in last if isinstance(b, Text))
+        return Outcome(answer, reason, state.usage)
+
+class Budget(ABC):
+    @abstractmethod
+    def charge(self, usage: Usage) -&gt; None: ...
+
+    @abstractmethod
+    def exhausted(self) -&gt; bool: ...
+
+    @abstractmethod
+    def child(self, limit: Usage) -&gt; &quot;Budget&quot;:
+        &quot;&quot;&quot;A budget for a sub-agent, bounded by what is left of this one.&quot;&quot;&quot;
+
+class StepBudget(Budget):
+    def __init__(self, max_steps):
+        self.max_steps, self.steps = max_steps, 0
+
+    def charge(self, usage):
+        self.steps += 1
+
+    def exhausted(self):
+        return self.steps &gt;= self.max_steps
+
+    def child(self, limit):  # fake: ignores the limit
+        return StepBudget(self.max_steps - self.steps)
+
+@dataclass
+class Event:
+    kind: Literal[&quot;model_call&quot;, &quot;model_response&quot;, &quot;tool_call&quot;, &quot;tool_result&quot;]
+    data: object
+
+@dataclass
+class Allow: ...
+
+@dataclass
+class Deny:
+    reason: str
+
+@dataclass
+class Replace:
+    call: ToolCall
+
+Decision = Allow | Deny | Replace
+
+class EventBus(ABC):
+    @abstractmethod
+    async def emit(self, event: Event) -&gt; None: ...
+
+    @abstractmethod
+    async def intercept(self, call: ToolCall) -&gt; Decision: ...
+
+@dataclass
+class Harness:
+    loop: Loop
+    budget: Budget
+    tools: list[Tool] = field(default_factory=list)
+    policy: ContextPolicy | None = None
+    events: EventBus | None = None
+
+class Agent:
+    def __init__(self, model: Model, system: str, harness: Harness):
+        self.model, self.harness = model, harness
+        self.state = RunState(system, [], Usage(0, 0, 0.0, 0.0), {})
+
+    async def run(self, task: str) -&gt; Outcome:
+        &quot;&quot;&quot;Append the task to the state, then run the loop until it stops.&quot;&quot;&quot;
+        self.state.messages.append(Message(&quot;user&quot;, [Text(task)]))
+        harness = self.harness
+        return await harness.loop.run(self.state, self.model, harness)
+
+class ProtocolAdapter(ABC):
+    @abstractmethod
+    def encode(self, model: str, prompt: Prompt) -&gt; dict:
+        &quot;&quot;&quot;Convert the prompt to a request body of one API.&quot;&quot;&quot;
+
+    @abstractmethod
+    def decode(self, body: dict) -&gt; Response:
+        &quot;&quot;&quot;Convert a response body of the API to a response.&quot;&quot;&quot;
+
+class AnthropicAdapter(ProtocolAdapter):
+    def encode(self, model, prompt):
+        return {
+            &quot;model&quot;: model,
+            &quot;max_tokens&quot;: 16000,
+            &quot;system&quot;: prompt.system,
+            &quot;messages&quot;: [
+                {&quot;role&quot;: m.role, &quot;content&quot;: self._blocks(m.content)}
+                for m in prompt.messages
+            ],
+            &quot;tools&quot;: [vars(t) for t in prompt.tools],
+        }
+
+    def _blocks(self, blocks):
+        wire = []
+        for b in blocks:
+            match b:
+                case Text(text):
+                    wire.append({&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: text})
+                case ToolCall(id, name, input):
+                    wire.append(
+                        {&quot;type&quot;: &quot;tool_use&quot;, &quot;id&quot;: id, &quot;name&quot;: name, &quot;input&quot;: input}
+                    )
+                case ToolResult(call_id, content, is_error):
+                    wire.append({
+                        &quot;type&quot;: &quot;tool_result&quot;,
+                        &quot;tool_use_id&quot;: call_id,
+                        &quot;content&quot;: self._blocks(content),
+                        &quot;is_error&quot;: is_error,
+                    })
+                # Thinking is not sent back: the API accepts it only with its
+                # original signature, which this example does not keep.
+        return wire
+
+    def decode(self, body):
+        content = []
+        for b in body[&quot;content&quot;]:
+            match b[&quot;type&quot;]:
+                case &quot;text&quot;:
+                    content.append(Text(b[&quot;text&quot;]))
+                case &quot;tool_use&quot;:
+                    content.append(ToolCall(b[&quot;id&quot;], b[&quot;name&quot;], b[&quot;input&quot;]))
+                case &quot;thinking&quot;:
+                    content.append(Thinking(b[&quot;thinking&quot;]))
+        stop = {&quot;stop_sequence&quot;: &quot;end_turn&quot;}.get(body[&quot;stop_reason&quot;], body[&quot;stop_reason&quot;])
+        u = body[&quot;usage&quot;]
+        # Cost and time are not part of the body; the model fills them in.
+        return Response(content, stop, Usage(u[&quot;input_tokens&quot;], u[&quot;output_tokens&quot;], 0.0, 0.0))
+
+class Transport(ABC):
+    @abstractmethod
+    async def send(self, body: dict) -&gt; dict:
+        &quot;&quot;&quot;Send the request body and return the response body.&quot;&quot;&quot;
+
+class HttpTransport(Transport):
+    def __init__(self, url: str, headers: dict[str, str]):
+        self.url, self.headers = url, headers
+
+    async def send(self, body):
+        return await asyncio.to_thread(self._post, body)
+
+    def _post(self, body):
+        request = urllib.request.Request(
+            self.url,
+            data=json.dumps(body).encode(),
+            headers={&quot;content-type&quot;: &quot;application/json&quot;, **self.headers},
+        )
+        with urllib.request.urlopen(request, timeout=600) as response:
+            return json.load(response)
+
+class Endpoint(ABC):
+    @abstractmethod
+    async def complete(self, model: str, prompt: Prompt) -&gt; Response:
+        &quot;&quot;&quot;Send the prompt to the named model and return its response.&quot;&quot;&quot;
+
+    @abstractmethod
+    def cost(self, usage: Usage) -&gt; float:
+        &quot;&quot;&quot;The price of the usage in USD.&quot;&quot;&quot;
+
+class AdapterEndpoint(Endpoint):
+    def __init__(self, adapter, transport, input_usd_per_mtok, output_usd_per_mtok):
+        self.adapter, self.transport = adapter, transport
+        self.prices = (input_usd_per_mtok, output_usd_per_mtok)
+
+    async def complete(self, model, prompt):
+        body = await self.transport.send(self.adapter.encode(model, prompt))
+        return self.adapter.decode(body)
+
+    def cost(self, usage):
+        input_price, output_price = self.prices
+        tokens_usd = usage.input_tokens * input_price + usage.output_tokens * output_price
+        return tokens_usd / 1_000_000
+
+class EndpointModel(Model):
+    def __init__(self, endpoint: Endpoint, name: str, caps: Capabilities):
+        self.endpoint, self.name, self.caps = endpoint, name, caps
+
+    async def complete(self, prompt):
+        start = time.monotonic()
+        response = await self.endpoint.complete(self.name, prompt)
+        response.usage.cost = self.endpoint.cost(response.usage)
+        response.usage.seconds = time.monotonic() - start
+        return response
+
+    async def stream(self, prompt):
+        yield await self.complete(prompt)
+
+    def capabilities(self):
+        return self.caps
+
+ASSISTANT_PROMPT = &quot;&quot;&quot;
+You are a home assistant. You control the lights and the music in the home and you report the temperature and the weather.
+
+The home has three rooms: kitchen, living room and bedroom. The current time and the state of the home are given below.
+
+To play music, you need a song name. If the resident names a song, play it. If the resident describes a mood or an occasion, ask pick_song for a song first.
+
+When the resident says good morning, run the morning routine:
+1. Read the temperature inside and outside and the forecast for today.
+2. Turn on the kitchen lights.
+3. Play a calm song for the morning.
+4. Answer with a short briefing: the temperatures, the forecast and one practical tip.
+
+Answer in one to three short sentences, in plain text. If a tool call is denied, tell the resident why.
+&quot;&quot;&quot;
+
+DJ_PROMPT = &quot;&quot;&quot;
+You pick songs for a home music player.
+
+You receive a request, such as a mood or an occasion. Pick one well-known song that fits it.
+
+Answer with the song name and the artist only, for example: &quot;Clair de Lune&quot; by Debussy.
+&quot;&quot;&quot;
+
+@dataclass
+class Home:
+    &quot;&quot;&quot;A simulated home: the devices the tools act on.&quot;&quot;&quot;
+    now: datetime
+    lights: dict[str, bool] = field(default_factory=lambda: {
+        &quot;kitchen&quot;: False, &quot;living room&quot;: False, &quot;bedroom&quot;: False,
+    })
+    song: str | None = None
+    temperature: dict[str, int] = field(default_factory=lambda: {
+        &quot;inside&quot;: 21, &quot;outside&quot;: 5,
+    })
+    forecast: dict[str, str] = field(default_factory=lambda: {
+        &quot;today&quot;: &quot;cloudy, rain from 14:00 to 18:00, high 8°C&quot;,
+        &quot;tomorrow&quot;: &quot;sunny, high 11°C&quot;,
+    })
+
+ROOM = {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;kitchen&quot;, &quot;living room&quot;, &quot;bedroom&quot;]}
+
+class HomeTool(Tool):
+    def __init__(self, home: Home):
+        self.home = home
+
+class LightsOn(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;lights_on&quot;,
+        description=&quot;Turn on the lights in one room.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;room&quot;: ROOM},
+            &quot;required&quot;: [&quot;room&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.lights[input[&quot;room&quot;]] = True
+        return ToolOutput([Text(f&quot;The {input[&apos;room&apos;]} lights are on.&quot;)])
+
+class LightsOff(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;lights_off&quot;,
+        description=&quot;Turn off the lights in one room.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;room&quot;: ROOM},
+            &quot;required&quot;: [&quot;room&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.lights[input[&quot;room&quot;]] = False
+        return ToolOutput([Text(f&quot;The {input[&apos;room&apos;]} lights are off.&quot;)])
+
+class PlayMusic(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;play_music&quot;,
+        description=&quot;Play a song by its name.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;song&quot;: {&quot;type&quot;: &quot;string&quot;}},
+            &quot;required&quot;: [&quot;song&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        self.home.song = input[&quot;song&quot;]
+        return ToolOutput([Text(f&quot;Playing {input[&apos;song&apos;]}.&quot;)])
+
+class StopMusic(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;stop_music&quot;,
+        description=&quot;Stop the music.&quot;,
+        input_schema={&quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {}},
+    )
+
+    async def execute(self, input):
+        if self.home.song is None:
+            return ToolOutput([Text(&quot;No music is playing.&quot;)])
+        self.home.song = None
+        return ToolOutput([Text(&quot;The music is stopped.&quot;)])
+
+class GetTemperature(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;get_temperature&quot;,
+        description=&quot;Read the temperature inside or outside the home, in °C.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;where&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;inside&quot;, &quot;outside&quot;]},
+            },
+            &quot;required&quot;: [&quot;where&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        degrees = self.home.temperature[input[&quot;where&quot;]]
+        return ToolOutput([Text(f&quot;{degrees}°C&quot;)])
+
+class GetForecast(HomeTool):
+    definition = ToolDefinition(
+        name=&quot;get_forecast&quot;,
+        description=&quot;Get the weather forecast for today or tomorrow.&quot;,
+        input_schema={
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;day&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;today&quot;, &quot;tomorrow&quot;]},
+            },
+            &quot;required&quot;: [&quot;day&quot;],
+        },
+    )
+
+    async def execute(self, input):
+        return ToolOutput([Text(self.home.forecast[input[&quot;day&quot;]])])
+
+class HomeStatusPolicy(ContextPolicy):
+    &quot;&quot;&quot;Adds the time and the state of the home to the system prompt.&quot;&quot;&quot;
+
+    def __init__(self, home: Home):
+        self.home = home
+
+    async def prepare(self, state, prompt):
+        lights = [room for room, on in self.home.lights.items() if on]
+        status = (
+            f&quot;Time: {self.home.now:%A %H:%M}\n&quot;
+            f&quot;Lights on: {&apos;, &apos;.join(lights) or &apos;none&apos;}\n&quot;
+            f&quot;Music: {self.home.song or &apos;not playing&apos;}&quot;
+        )
+        system = f&quot;{prompt.system}\n\n{status}&quot;
+        return Prompt(system, prompt.messages, prompt.tools)
+
+class HomeEvents(EventBus):
+    &quot;&quot;&quot;Logs every tool call and result, and keeps the quiet hours.&quot;&quot;&quot;
+
+    def __init__(self, home: Home):
+        self.home = home
+
+    def log(self, kind, text):
+        print(f&quot;{self.home.now:%H:%M}  {kind:&amp;#x3C;9}  {text}&quot;)
+
+    async def emit(self, event):
+        match event.kind, event.data:
+            case &quot;tool_call&quot;, call:
+                args = &quot;, &quot;.join(
+                    f&quot;{k}={json.dumps(v, ensure_ascii=False)}&quot;
+                    for k, v in call.input.items()
+                )
+                self.log(&quot;tool&quot;, f&quot;{call.name}({args})&quot;)
+            case &quot;tool_result&quot;, result:
+                prefix = &quot;denied: &quot; if result.is_error else &quot;&quot;
+                self.log(&quot;result&quot;, prefix + result.content[0].text)
+
+    async def intercept(self, call):
+        hour = self.home.now.hour
+        if call.name == &quot;play_music&quot; and (hour &gt;= 22 or hour &amp;#x3C; 7):
+            return Deny(&quot;Quiet hours, 22:00 to 07:00. No music now.&quot;)
+        return Allow()
+
+class AgentTool(Tool):
+    &quot;&quot;&quot;A tool that runs a new agent for each call and returns its answer.&quot;&quot;&quot;
+
+    def __init__(self, name, description, new_agent):
+        self.name, self.description = name, description
+        self.new_agent = new_agent
+
+    @property
+    def definition(self):
+        return ToolDefinition(
+            name=self.name,
+            description=self.description,
+            input_schema={
+                &quot;type&quot;: &quot;object&quot;,
+                &quot;properties&quot;: {&quot;task&quot;: {&quot;type&quot;: &quot;string&quot;}},
+                &quot;required&quot;: [&quot;task&quot;],
+            },
+        )
+
+    async def execute(self, input):
+        outcome = await self.new_agent().run(input[&quot;task&quot;])
+        return ToolOutput([Text(outcome.answer)])
+# endregion
+
+import asyncio
+import os
+from datetime import datetime
+
+# Requires an Anthropic API key in ANTHROPIC_API_KEY.
+anthropic = AdapterEndpoint(
+    AnthropicAdapter(),
+    HttpTransport(
+        &quot;https://api.anthropic.com/v1/messages&quot;,
+        {&quot;x-api-key&quot;: os.environ[&quot;ANTHROPIC_API_KEY&quot;], &quot;anthropic-version&quot;: &quot;2023-06-01&quot;},
+    ),
+    input_usd_per_mtok=0.10,
+    output_usd_per_mtok=0.50,
+)
+haiku = EndpointModel(
+    anthropic, &quot;claude-haiku-5-5&quot;, Capabilities(context_window=1_000_000, tool_calling=True)
+)
+
+def new_dj():
+    return Agent(
+        model=haiku,
+        system=DJ_PROMPT,
+        harness=Harness(loop=SimpleLoop(), budget=StepBudget(max_steps=1)),
+    )
+
+def new_assistant(home):
+    return Agent(
+        model=haiku,
+        system=ASSISTANT_PROMPT,
+        harness=Harness(
+            loop=SimpleLoop(),
+            budget=StepBudget(max_steps=8),
+            tools=[
+                LightsOn(home),
+                LightsOff(home),
+                PlayMusic(home),
+                StopMusic(home),
+                GetTemperature(home),
+                GetForecast(home),
+                AgentTool(
+                    &quot;pick_song&quot;,
+                    &quot;Pick a song that fits a mood or an occasion. Returns its name and artist.&quot;,
+                    new_dj,
+                ),
+            ],
+            policy=HomeStatusPolicy(home),
+            events=HomeEvents(home),
+        ),
+    )
+
+# One day in the home: each request is a new run with a fresh state.
+home = Home(now=datetime(2026, 11, 23, 7, 15))
+day = [
+    (&quot;07:15&quot;, &quot;Good morning.&quot;),
+    (&quot;13:20&quot;, &quot;Should I open the window?&quot;),
+    (&quot;19:30&quot;, &quot;Turn on the living room lights and play something calm.&quot;),
+    (&quot;21:05&quot;, &quot;Turn off all the lights and stop the music.&quot;),
+    (&quot;23:10&quot;, &apos;Play &quot;Thunderstruck&quot;.&apos;),
+]
+for time, request in day:
+    hour, minute = map(int, time.split(&quot;:&quot;))
+    home.now = home.now.replace(hour=hour, minute=minute)
+    print(f&quot;{time}  user       {request}&quot;)
+    outcome = asyncio.run(new_assistant(home).run(request))
+    print(f&quot;{time}  assistant  {outcome.answer}\n&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;A run: good morning&lt;/h3&gt;
+&lt;p&gt;At 7:15 the resident says &quot;Good morning.&quot; The system prompt defines the morning routine, so the model knows which steps to take. The run takes four steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The model asks for the three readings at once. They do not depend on each other, so the loop executes them in parallel.&lt;/li&gt;
+&lt;li&gt;The model turns on the kitchen lights and asks the DJ for a morning song.&lt;/li&gt;
+&lt;li&gt;The model plays the song the DJ picked. This step depends on the result of the previous one.&lt;/li&gt;
+&lt;li&gt;The model has everything it needs and answers with the briefing.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;sequenceDiagram
+    participant U as Resident
+    participant H as Harness
+    participant M as Model
+    participant T as Tools
+    participant D as DJ
+
+    U-&gt;&gt;H: run(&quot;Good morning.&quot;)
+    Note over H,T: Step 1: three readings in parallel
+    H-&gt;&gt;M: prompt (status, task)
+    M--&gt;&gt;H: 3 tool calls
+    H-&gt;&gt;T: get_temperature(&quot;inside&quot;)
+    H-&gt;&gt;T: get_temperature(&quot;outside&quot;)
+    H-&gt;&gt;T: get_forecast(&quot;today&quot;)
+    T--&gt;&gt;H: 19°C, 4°C, rain from 14:00
+    Note over H,D: Step 2: lights and a song name
+    H-&gt;&gt;M: prompt (+ results)
+    M--&gt;&gt;H: lights_on, pick_song
+    H-&gt;&gt;T: lights_on(&quot;kitchen&quot;)
+    H-&gt;&gt;D: run(&quot;a calm morning song&quot;)
+    D--&gt;&gt;H: &quot;Here Comes the Sun&quot;
+    Note over H,T: Step 3: play the picked song
+    H-&gt;&gt;M: prompt (+ results)
+    M--&gt;&gt;H: play_music
+    H-&gt;&gt;T: play_music(&quot;Here Comes the Sun&quot;)
+    Note over H,M: Step 4: the briefing
+    H-&gt;&gt;M: prompt (+ result)
+    M--&gt;&gt;H: final answer
+    H--&gt;&gt;U: &quot;Good morning. It is 19°C...&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 12: The morning routine, in four steps.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The final answer:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot;&gt;Good morning. It is 19°C inside and 4°C outside, and rain is expected from 14:00, so take an umbrella. The kitchen lights are on and &quot;Here Comes the Sun&quot; is playing.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;Building other agents from the same blocks&lt;/h3&gt;
+&lt;p&gt;Each change below touches one component and leaves the rest of the assistant as it is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Replace the model: move the assistant from a hosted API to a model on a home server, so no request leaves the home.&lt;/li&gt;
+&lt;li&gt;Remove tools: without &lt;code&gt;play_music&lt;/code&gt;, &lt;code&gt;stop_music&lt;/code&gt; and &lt;code&gt;pick_song&lt;/code&gt;, the assistant controls only the lights and reports the weather.&lt;/li&gt;
+&lt;li&gt;Add a tool: &lt;code&gt;set_thermostat(temperature)&lt;/code&gt; lets the assistant heat the home, behind a guard rule that clamps the temperature to between 16°C and 24°C.&lt;/li&gt;
+&lt;li&gt;Replace the guard rules: a home with a sleeping baby adds a rule that denies &lt;code&gt;lights_on(&quot;bedroom&quot;)&lt;/code&gt; after 20:00.&lt;/li&gt;
+&lt;li&gt;Compose further: the home assistant itself becomes a tool of a personal assistant agent, next to a calendar agent and an email agent.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-mermaid&quot;&gt;flowchart TB
+    Personal[&quot;Personal assistant agent&quot;]
+    Personal --&gt;|&quot;home_assistant&quot;| Home[&quot;Home assistant agent&quot;]
+    Personal --&gt;|&quot;calendar&quot;| Calendar[&quot;Calendar agent&quot;]
+    Personal --&gt;|&quot;email&quot;| Email[&quot;Email agent&quot;]
+    Home --&gt;|&quot;pick_song&quot;| DJ[&quot;DJ agent&quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Graph 13: The home assistant reused as a tool of a larger agent.&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;10. Principles&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Each component exposes a narrow interface and depends only on the shared data and on the interfaces of other components.&lt;/li&gt;
+&lt;li&gt;Each component changes for one reason: the model when models or where they run change, the loop when agent behaviour changes and tools when capabilities change.&lt;/li&gt;
+&lt;li&gt;Components exchange data only, and the state of a run is data.&lt;/li&gt;
+&lt;li&gt;Every component can be replaced and tested on its own, against fakes of the components around it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;11. Not covered here&lt;/h2&gt;
+&lt;p&gt;These topics are developed in separate documents: scheduling and rate limits shared by many agents, a model registry and routing between models, persistence of runs, messages that arrive while a run is going, cancellation, and starting and closing components that hold connections or processes.&lt;/p&gt;</content:encoded></item><item><title><![CDATA[The Unified Theory of Constraints]]></title><description><![CDATA[Every trick that makes AI agents work better is the same move: narrowing the space until the good answer is the likely one.]]></description><link>https://frycz.github.io/blog/unified-theory-of-constraints</link><guid isPermaLink="false">https://frycz.github.io/blog/unified-theory-of-constraints</guid><pubDate>Sat, 19 Sep 2026 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;Whenever I get satisfying results from an AI agent, I look back at the context I provided in the input. Most often it&apos;s not that the instructions were precise enough, but rather it feels like I defined good limits and still left space for the model to be &quot;creative&quot;.&lt;/p&gt;
 &lt;p&gt;I&apos;d been thinking of my prompts as requests, but the prompts that worked best weren&apos;t single direct orders but rather a set of rules: use these tools, follow this style, don&apos;t touch that folder, etc. Each rule removed a set of possible outcomes, and the result got better every time I specified more limits.&lt;/p&gt;
 &lt;h2&gt;The painter picks the paint first&lt;/h2&gt;
 &lt;p&gt;Let&apos;s look at how we, people make things in general. A painter doesn&apos;t start with every color that exists. They squeeze out five or six onto a palette, and that small set is a big part of why the painting looks like theirs. A musician picks a handful of sounds for an album and sticks to them for weeks. A sculptor chooses marble or wood, a chisel or a rasp, and those choices decide half the shape before the first cut.&lt;/p&gt;
