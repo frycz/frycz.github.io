@@ -14,6 +14,35 @@ test.describe("Article reader", () => {
     expect(await rail.locator("a[data-target]").count()).toBeGreaterThan(1);
   });
 
+  // The bar is as wide as the window; what is in it is as wide as the prose. Both edges are
+  // checked, because the name is pinned to one of them and the controls to the other.
+  test("the bar's contents line up with the text column and move with it", async ({ page }) => {
+    await page.goto(POST);
+
+    const edges = (selector) =>
+      page.locator(selector).first().evaluate((el) => {
+        const { left, right } = el.getBoundingClientRect();
+        return { left, right };
+      });
+    // Both reads happen in the same poll, so a measurement taken mid-transition is simply
+    // retried rather than compared against a column that has since moved.
+    const offBy = async (barSelector, edge) => {
+      const [bar, text] = await Promise.all([edges(barSelector), edges(".markdown-body")]);
+      return Math.abs(bar[edge] - text[edge]);
+    };
+
+    await expect.poll(() => offBy(".site-title", "left")).toBeLessThan(1);
+    await expect.poll(() => offBy(".theme-toggle", "right")).toBeLessThan(1);
+    const inset = (await edges(".site-title")).left;
+
+    // Closing the rail gives the article the space back. The column keeps its measure and
+    // recentres in it, moving right by half the rail, and the bar travels with it.
+    await page.getByRole("button", { name: /toggle table of contents/i }).click();
+    await expect.poll(async () => (await edges(".site-title")).left).toBeGreaterThan(inset);
+    await expect.poll(() => offBy(".site-title", "left")).toBeLessThan(1);
+    await expect.poll(() => offBy(".theme-toggle", "right")).toBeLessThan(1);
+  });
+
   test("a contents link jumps to its heading and marks itself current", async ({ page }) => {
     await page.goto(POST);
 

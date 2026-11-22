@@ -111,6 +111,66 @@ a:hover {
 
 /* ---------- the bar ---------- */
 
+/* The bar is as wide as the window, but what is in it lines up with the article: the name
+   starts where the prose starts and the last control ends where the prose ends, so the page
+   reads as one column with a bar on top rather than as a bar the column happens to sit under.
+
+   md-reader's own bar is a flex row with a gutter of its own, which is what the grid and the
+   padding here replace. The second column stands in for the contents rail, so the bar's
+   contents are centred in the same space the text is — and move with it when the rail opens.
+   The rail's own column transitions over the same 220ms, so the two travel together. */
+.site-header {
+  --bar-gutter: 40px;
+  --bar-rail: 0px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--bar-rail);
+  /* md-reader's row gap would sit between the bar's column and the rail's, which is half a gap
+     of misalignment against a layout grid that has none. */
+  gap: 0;
+  padding: 0;
+}
+
+.site-header[data-toc="on"] {
+  --bar-rail: var(--toc-w);
+}
+
+/* Only once the page has settled, and for the same reason the rail is: see Article.js. */
+.site-header.toc-animated {
+  transition: grid-template-columns 220ms ease;
+}
+
+/* The prose's own box: its width while there is room for it, and the window minus .mdr-main's
+   gutters once there is not. Centred, which is where the text column is too. */
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(var(--content-width), 100% - var(--bar-gutter) * 2);
+  margin-inline: auto;
+}
+
+/* md-reader insets the title inside its own gutter. Here the gutter is the article's, and the
+   name sits on its edge. */
+.site-header-inner .mdr-header-title {
+  margin-left: 0;
+}
+
+/* Below md-reader's rail breakpoint the rail has no column to leave room for: it opens over
+   the article instead, and the bar has the window to itself. */
+@media (max-width: 1100px) {
+  .site-header[data-toc="on"] {
+    --bar-rail: 0px;
+  }
+}
+
+/* The gutters .mdr-main narrows to when the article needs the whole window. */
+@media (max-width: 760px) {
+  .site-header {
+    --bar-gutter: 16px;
+  }
+}
+
 /* The site's name doubles as the way home, and looks the same either way. */
 .site-title {
   color: var(--fg-strong);

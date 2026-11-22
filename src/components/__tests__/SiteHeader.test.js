@@ -31,4 +31,30 @@ describe("SiteHeader", () => {
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /table of contents/i })).not.toBeInTheDocument();
   });
+
+  // The bar's contents line up with the article's text, so the bar has to leave room for the
+  // same rail the text does. A page without one says nothing and gets the whole window.
+  describe("the room it leaves for the contents rail", () => {
+    it("is none by default", () => {
+      render(<SiteHeader />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-toc", "off");
+    });
+
+    it("is the rail's column while the rail is open", () => {
+      const { rerender } = render(<SiteHeader railOpen />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-toc", "on");
+
+      rerender(<SiteHeader railOpen={false} />);
+      expect(screen.getByRole("banner")).toHaveAttribute("data-toc", "off");
+    });
+
+    // Arriving at the right width is not a movement anyone asked to watch; see Article.js.
+    it("travels there only once the page has settled", () => {
+      const { rerender } = render(<SiteHeader railOpen />);
+      expect(screen.getByRole("banner")).not.toHaveClass("toc-animated");
+
+      rerender(<SiteHeader railOpen animated />);
+      expect(screen.getByRole("banner")).toHaveClass("toc-animated");
+    });
+  });
 });

@@ -56,7 +56,7 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
   // arrives a moment after the page does. That arrival is not a change anyone asked for, and
   // animating it would make every article open with the rail sliding in. The transition is
   // armed a frame later, by which time the page is settled and the only thing left that can
-  // move the rail is the button.
+  // move the rail — or the bar that lines up with it — is the button.
   useEffect(() => {
     let second;
     const first = requestAnimationFrame(() => {
@@ -70,7 +70,7 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader railOpen={hasToc && tocOpen} animated={animated} />
 
       {hasToc && <TocToggle open={tocOpen} onToggle={toggleToc} />}
 
