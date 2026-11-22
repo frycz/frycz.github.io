@@ -5,9 +5,9 @@ slug: "simple-prompt-eval"
 description: "I ran a proper eval on a toy prompt. The score went up as expected — everything else I learned was a surprise."
 ---
 
-A few months ago I wrote that [AI engineering](/blog/ai-engineering) means evals with graded rubrics, run over samples, judged statistically. Then I went back to to prompting and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.
+A few months ago I wrote that [AI engineering](/blog/ai-engineering/) means evals with graded rubrics, run over samples, judged statistically. Then I went back to to prompting and kept doing what I always did: tweak a line, look at one output, decide it felt better, move on.
 
-That is not engineering, that is [vibe-coding](/blog/vibe-conding-is-awesome) with extra steps. Engineering means measuring and improving based on the results.
+That is not engineering, that is [vibe-coding](/blog/vibe-coding-is-awesome/) with extra steps. Engineering means measuring and improving based on the results.
 
 So I ran a real evaluation on a deliberately small problem, wrote down everything, and published it. It cost less than a dollar.
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, graphql } from "gatsby";
 import Layout from "../components/Layout";
+import Seo from "../components/Seo";
 
 const IndexPage = ({ data }) => {
   const projects = data.projects.edges;
@@ -126,11 +127,11 @@ const IndexPage = ({ data }) => {
 
 export default IndexPage;
 
-export const Head = () => (
-  <>
-    <title>Adam Sawicki — Software Engineer</title>
-    <meta name="description" content="Building reliable systems." />
-  </>
+export const Head = ({ location }) => (
+  <Seo
+    description="Software engineer with 13+ years of experience, writing about AI engineering, coding agents, tools and workflows."
+    pathname={location.pathname}
+  />
 );
 
 export const query = graphql`

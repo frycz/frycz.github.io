@@ -2,7 +2,15 @@ import React from "react";
 import { themeBootstrap } from "md-reader";
 import { SETTINGS_KEY } from "./src/lib/reader-settings";
 
-export const onRenderBody = ({ setHeadComponents, setPreBodyComponents }) => {
+export const onRenderBody = ({
+  setHeadComponents,
+  setPreBodyComponents,
+  setHtmlAttributes,
+}) => {
+  // Gatsby's default document leaves <html> without a language, and the Head API only takes
+  // tags that go inside the head, so this is the one place the attribute can be set.
+  setHtmlAttributes({ lang: "en" });
+
   setHeadComponents([
     React.createElement("script", {
       key: "counter-dev",

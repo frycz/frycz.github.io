@@ -1,11 +1,13 @@
+const site = require("./src/lib/site");
+
 module.exports = {
-  siteMetadata: {
-    title: "Adam Sawicki — Software Engineer",
-    description: "Building reliable systems.",
-    author: "Adam",
-    siteUrl: "https://frycz.github.io",
-  },
+  siteMetadata: site,
+  // GitHub Pages serves a page from its directory, so it answers /blog/a-post with a 301 to
+  // /blog/a-post/. Generating the slash everywhere — links, canonical URLs, the sitemap —
+  // keeps every address the site publishes the one that actually answers.
+  trailingSlash: "always",
   plugins: [
+    "gatsby-plugin-sitemap",
     {
       resolve: "gatsby-source-filesystem",
       options: {

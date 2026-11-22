@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, graphql } from "gatsby";
 import Layout from "../components/Layout";
+import Seo from "../components/Seo";
 
 const ProjectsPage = ({ data }) => {
   const projects = data.allMarkdownRemark.edges;
@@ -38,11 +39,12 @@ const ProjectsPage = ({ data }) => {
 
 export default ProjectsPage;
 
-export const Head = () => (
-  <>
-    <title>Projects — Adam</title>
-    <meta name="description" content="Things I built and decided to publish." />
-  </>
+export const Head = ({ location }) => (
+  <Seo
+    title="Projects"
+    description="Things I built and decided to publish."
+    pathname={location.pathname}
+  />
 );
 
 export const query = graphql`

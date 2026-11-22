@@ -1,7 +1,8 @@
 ---
 title: "Vibe-Coding Is Awesome"
 date: "2025-07-12"
-slug: "vibe-conding-is-awesome"
+slug: "vibe-coding-is-awesome"
+description: "Every criticism of vibe-coding is fair, and I still vibe-code — because a cheap experiment is worth more than clean code when I am exploring something new."
 ---
 
 I know — professional software engineers look at this title with contempt. It has been proven multiple times already that the quality and overall value of vibe-coded solutions is at least questionable, not to mention that deploying a half-baked app to production can cause more damage than actual profits.

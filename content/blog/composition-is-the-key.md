@@ -2,6 +2,7 @@
 title: "Composition Is the Key"
 date: "2019-02-21"
 slug: "composition-is-the-key"
+description: "I kept writing the same thought into my idea box: composition is the key. It is not a software principle — it is how music, electronics and biology are built."
 ---
 
 I keep an "idea box" where I put thoughts that come to my mind when I am bored enough. Recently, I wanted to add one more, but before I did so, I had started reading existing entries. To my surprise, the thought I wanted to write down was already there... twice.

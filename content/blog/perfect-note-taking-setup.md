@@ -33,4 +33,4 @@ It is late 2025 and I think the direction is clear. What can be done on the comm
 
 AI agents understand text and the command line has become their interface. Why bother using GUI apps then? I store prompts, notes and guides for the AI tools in a place they can read — `md` files. As the notes grow, I organise them into directories and tree structures.
 
-A few commands like `ls`, `tree`, `ripgrep` and `fd` are enough to manage notes on a daily basis. For editing I use `nvim` that I configured earlier. I am still testing the new approach but it looks very promising so far. The most important thing is that it fits nicely into my [Triangle of Success](/blog/triangle-of-success) strategy :)
+A few commands like `ls`, `tree`, `ripgrep` and `fd` are enough to manage notes on a daily basis. For editing I use `nvim` that I configured earlier. I am still testing the new approach but it looks very promising so far. The most important thing is that it fits nicely into my [Triangle of Success](/blog/triangle-of-success/) strategy :)

@@ -2,6 +2,7 @@
 title: "My Triangle of Success - Everything Should Be Text"
 date: "2025-09-21"
 slug: "triangle-of-success"
+description: "Me, an LLM and text — the three corners that made my side projects work. Everything I produce is text now, including the designs, diagrams and user flows."
 ---
 
 When working on my side projects with LLMs, I noticed a simple pattern that dramatically improved my results. I call it the triangle of success: Me (or any human can go here actually), LLM and text. The idea is straightforward — all these "elements" understand each other and they create a solid, robust construction. Speaking more practically, everything I create should be text-based because text is the language that LLMs understand.

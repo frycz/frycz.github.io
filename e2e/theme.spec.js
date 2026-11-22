@@ -72,7 +72,7 @@ test.describe("Theme toggle", () => {
     const chosen = await page.locator("html").getAttribute("data-theme");
 
     await page.getByRole("link", { name: "Blog" }).click();
-    await expect(page).toHaveURL("/blog");
+    await expect(page).toHaveURL("/blog/");
     await expect(page.locator("html")).toHaveAttribute("data-theme", chosen);
   });
 

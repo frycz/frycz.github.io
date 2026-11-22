@@ -1,6 +1,7 @@
 import React from "react";
 import { graphql } from "gatsby";
 import Article from "../components/Article";
+import Seo from "../components/Seo";
 
 const ProjectTemplate = ({ data }) => {
   const project = data.markdownRemark;
@@ -18,13 +19,15 @@ const ProjectTemplate = ({ data }) => {
 
 export default ProjectTemplate;
 
-export const Head = ({ data }) => {
+export const Head = ({ data, location }) => {
   const project = data.markdownRemark;
   return (
-    <>
-      <title>{project.frontmatter.title} — Adam</title>
-      <meta name="description" content={project.excerpt} />
-    </>
+    <Seo
+      title={project.frontmatter.title}
+      description={project.frontmatter.description || project.excerpt}
+      pathname={location.pathname}
+      article={{ date: project.frontmatter.isoDate }}
+    />
   );
 };
 
@@ -35,7 +38,9 @@ export const query = graphql`
       excerpt(pruneLength: 160)
       frontmatter {
         title
+        description
         date(formatString: "MMMM DD, YYYY")
+        isoDate: date
       }
     }
   }

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, graphql } from "gatsby";
 import Layout from "../components/Layout";
+import Seo from "../components/Seo";
 
 const BlogPage = ({ data }) => {
   const posts = data.allMarkdownRemark.edges;
@@ -36,11 +37,12 @@ const BlogPage = ({ data }) => {
 
 export default BlogPage;
 
-export const Head = () => (
-  <>
-    <title>Blog — Adam</title>
-    <meta name="description" content="Thoughts on software development and technology." />
-  </>
+export const Head = ({ location }) => (
+  <Seo
+    title="Blog"
+    description="Thoughts on software development and technology."
+    pathname={location.pathname}
+  />
 );
 
 export const query = graphql`
