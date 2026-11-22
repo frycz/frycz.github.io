@@ -226,10 +226,32 @@ a:focus-visible {
   width: calc(var(--toc-w) - 24px);
 }
 
-/* The button dims while the rail is closed, so the bar says which way the switch is set even
+/* The switch floats just under the bar at the right edge, which is the edge the contents
+   themselves are hung from. It keeps that spot when they open — a layer above the sheet, not
+   behind it — so the thing that opened the contents is still the thing that closes them.
+
+   Out of flow, so the text column keeps the whole window either way, and on a surface of its
+   own rather than the page's, so it stays legible over prose it happens to sit on. */
+.toc-toggle {
+  position: fixed;
+  top: calc(var(--header-h) + 10px);
+  right: 10px;
+  z-index: 25;
+  background: var(--bg-elev);
+  border-color: var(--border);
+  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.4);
+}
+
+/* The button dims while the contents are closed, so it says which way the switch is set even
    though the thing it controls is no longer on screen. */
 .toc-toggle[aria-expanded="false"] {
   color: var(--fg-muted);
+}
+
+/* The sheet and the rail both open underneath the button, so their heading keeps clear of the
+   corner it occupies. */
+.mdr-toc-head {
+  padding-right: 40px;
 }
 
 /* ---------- the contents rail on a narrow screen ---------- */
@@ -292,6 +314,15 @@ a:focus-visible {
 .toc-panel > .mdr-toc .mdr-toc-head,
 .toc-panel > .mdr-toc .mdr-toc-list {
   width: auto;
+}
+
+/* The rail's scale is a mouse pointer's: small text, picked precisely, in a column that has to
+   earn every pixel it takes from the article. The sheet is tapped with a thumb and covers the
+   article anyway, so its headings read at the size the article's own text does. Every depth
+   gets that one size — nesting is still said by the indent. */
+.toc-panel > .mdr-toc .mdr-toc-list,
+.toc-panel > .mdr-toc .mdr-toc-list a {
+  font-size: 16px;
 }
 
 /* Tapping the article closes the sheet, which is what an overlay is expected to do. It is only

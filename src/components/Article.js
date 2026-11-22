@@ -4,6 +4,7 @@ import SiteHeader from "./SiteHeader";
 import Header from "./Header";
 import Footer from "./Footer";
 import Reader from "./Reader";
+import TocToggle from "./TocToggle";
 import "../styles/global.css";
 
 // A post or a project: the same page as the markdown viewer, with the site's bar on top.
@@ -16,8 +17,8 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
     <Link to={backTo}>← {backLabel}</Link>
   ) : null;
 
-  // The rail belongs to the reader, the button to the bar, and the column they argue over is
-  // the layout's. This is the one place that sees all three.
+  // The rail belongs to the reader, the button floats over the page, and the column they argue
+  // over is the layout's. This is the one place that sees all three.
   const [hasToc, setHasToc] = useState(false);
   const [tocOpen, setTocOpen] = useState(true);
   const [animated, setAnimated] = useState(false);
@@ -40,14 +41,8 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
     return () => query.removeEventListener("change", apply);
   }, []);
 
-  // A panel over the article is in the way until it is dismissed, so picking a section closes
-  // it. Beside the text it is not in the way, and stays as the reader left it.
-  const closeIfPanel = useCallback(() => {
-    if (narrow) setTocOpen(false);
-  }, [narrow]);
-
   // The two ways out of a panel that an overlay is expected to offer. The scrim below is the
-  // third, and the bar's button is still there as the fourth.
+  // third, and the floating button is still there as the fourth.
   useEffect(() => {
     if (!narrow || !tocOpen) return undefined;
     const onKeyDown = (event) => {
@@ -75,7 +70,9 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
 
   return (
     <>
-      <SiteHeader toc={hasToc ? { open: tocOpen, toggle: toggleToc } : null} />
+      <SiteHeader />
+
+      {hasToc && <TocToggle open={tocOpen} onToggle={toggleToc} />}
 
       <div
         className={`mdr-layout${animated ? " toc-animated" : ""}${narrow ? " toc-panel" : ""}`}
@@ -94,7 +91,6 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
         <Reader
           html={html}
           onToc={setHasToc}
-          onNavigate={closeIfPanel}
           head={
             <Header title={title} date={date}>
               {back && <p className="header-nav">{back}</p>}

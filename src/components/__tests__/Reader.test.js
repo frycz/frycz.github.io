@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import Reader from "../Reader";
 
 // The shape gatsby-transformer-remark produces: no heading ids, bare <pre><code>, and a
@@ -23,6 +23,12 @@ describe("Reader", () => {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     }));
+    Element.prototype.scrollIntoView = jest.fn();
+  });
+
+  // A hash left on the url by one test is a heading the next one would scroll to on mount.
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
   });
 
   it("gives headings slugged ids", () => {
@@ -67,6 +73,21 @@ describe("Reader", () => {
   it("wraps tables so they scroll on their own", () => {
     const { container } = render(<Reader html={HTML} />);
     expect(container.querySelector(".table-wrap > table")).toBeTruthy();
+  });
+
+  // md-reader animates its way to a picked heading; here the click is caught first and the
+  // heading is simply there. One call, with no options, is how that is told apart: the reader's
+  // own handler would have asked for a smooth one.
+  it("jumps to a picked heading rather than animating to it", () => {
+    const onNavigate = jest.fn();
+    const { container } = render(<Reader html={HTML} onNavigate={onNavigate} />);
+
+    fireEvent.click(container.querySelector('.mdr-toc-list a[data-target="second-section"]'));
+
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith();
+    expect(onNavigate).toHaveBeenCalledWith("second-section");
+    expect(window.location.hash).toBe("#second-section");
   });
 
   it("opens external links in a new tab", () => {

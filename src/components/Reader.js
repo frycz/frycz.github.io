@@ -30,8 +30,25 @@ const Reader = ({ html, head, foot, onToc, onNavigate }) => {
       },
     });
 
-    // The rail is worth its column only once a post has something to navigate. The bar needs
-    // to hear about it too: that is what decides whether it offers a button for it.
+    // md-reader animates its way to a picked heading. Here the jump is instant, so the click is
+    // caught on the way down and stopped before the reader's own handler, below, ever sees it.
+    // What that handler did other than the animation is done here instead.
+    const onTocClick = (event) => {
+      const link = event.target.closest?.("a[data-target]");
+      if (!link || !tocRef.current.contains(link)) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const id = link.dataset.target;
+      document.getElementById(id)?.scrollIntoView();
+      window.history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+      onNavigateRef.current?.(id);
+    };
+    tocRef.current.addEventListener("click", onTocClick, true);
+
+    // The rail is worth its column only once a post has something to navigate. The button needs
+    // to hear about it too: that is what decides whether there is one at all.
     const found = tocRef.current.querySelectorAll("a[data-target]").length > 1;
     setHasToc(found);
     onTocRef.current?.(found);
@@ -44,7 +61,9 @@ const Reader = ({ html, head, foot, onToc, onNavigate }) => {
     const hash = decodeURIComponent(window.location.hash.slice(1));
     if (hash) document.getElementById(hash)?.scrollIntoView();
 
+    const toc = tocRef.current;
     return () => {
+      toc.removeEventListener("click", onTocClick, true);
       unsubscribe();
       reader.destroy();
     };

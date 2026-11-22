@@ -80,7 +80,7 @@ test.describe("Article reader", () => {
 test.describe("Contents on a narrow screen", () => {
   test.use({ viewport: { width: 390, height: 780 } });
 
-  test("the button opens the contents over the article and a section closes them", async ({ page }) => {
+  test("the button opens the contents over the article and they stay open through a jump", async ({ page }) => {
     await page.goto(POST);
 
     const toggle = page.getByRole("button", { name: /toggle table of contents/i });
@@ -97,11 +97,25 @@ test.describe("Contents on a narrow screen", () => {
     expect(box.width).toBeCloseTo(390 * 0.6, 0);
     expect(box.x + box.width).toBeCloseTo(390, 0);
 
+    // Tapped with a thumb rather than picked with a pointer: the headings read at the article's
+    // own size here, at every depth.
+    for (const link of await rail.locator("a[data-target]").all()) {
+      await expect(link).toHaveCSS("font-size", "16px");
+    }
+
+    // The button that opened it floats under the bar and over the sheet, so the way out is
+    // where the way in was.
+    const button = await toggle.boundingBox();
+    expect(button.y).toBeGreaterThanOrEqual(48);
+    expect(button.x).toBeGreaterThan(box.x);
+
+    // Picking a section moves the article behind the sheet and leaves the sheet where it is, so
+    // the next section is one tap away rather than a reopen away.
     const link = rail.locator("a[data-target]").nth(1);
     const target = await link.getAttribute("data-target");
     await link.click();
 
-    await expect(rail).toBeHidden();
+    await expect(rail).toBeVisible();
     await expect(page.locator(`#${target}`)).toBeInViewport();
   });
 
