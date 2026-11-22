@@ -125,7 +125,7 @@ test.describe("Theme toggle", () => {
   });
 
   // Closing the rail is the reader's call, and the text column takes the space back.
-  test("the bar's contents button opens and closes the rail", async ({ page }) => {
+  test("the floating contents button opens and closes the rail", async ({ page }) => {
     await page.goto("/blog/triangle-of-success");
 
     const button = page.getByRole("button", { name: /toggle table of contents/i });
