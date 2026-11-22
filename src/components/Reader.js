@@ -10,6 +10,11 @@ const Reader = ({ html, head, foot, onToc }) => {
   const tocRef = useRef(null);
   const [hasToc, setHasToc] = useState(false);
 
+  // Only the article's html decides whether the reader remounts. onToc is a way to report the
+  // result upward, so it rides along in a ref instead of becoming a remount trigger.
+  const onTocRef = useRef(onToc);
+  onTocRef.current = onToc;
+
   useEffect(() => {
     const reader = mountReader({
       content: contentRef.current,
@@ -24,7 +29,7 @@ const Reader = ({ html, head, foot, onToc }) => {
     // to hear about it too: that is what decides whether it offers a button for it.
     const found = tocRef.current.querySelectorAll("a[data-target]").length > 1;
     setHasToc(found);
-    onToc?.(found);
+    onTocRef.current?.(found);
 
     // Diagrams are drawn with the palette that was in effect, so a theme change has to redraw them.
     const unsubscribe = subscribeSettings((settings, patch) => {
