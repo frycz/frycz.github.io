@@ -21,14 +21,15 @@ const Article = ({ html, title, date, backTo, backLabel }) => {
   const [hasToc, setHasToc] = useState(false);
   const [tocOpen, setTocOpen] = useState(true);
   const [animated, setAnimated] = useState(false);
-  // Below md-reader's rail breakpoint there is no column to give the rail, so the same button
-  // opens it as a panel over the article instead. False through the server render and the first
-  // paint, which is what keeps a narrow screen from flashing the panel before it is measured.
+  // Below the rail breakpoint there is no column to give the rail, so the same button opens it
+  // as a panel over the article instead. False through the server render and the first paint,
+  // which is what keeps a narrow screen from flashing the panel before it is measured.
   const [narrow, setNarrow] = useState(false);
   const toggleToc = useCallback(() => setTocOpen((open) => !open), []);
 
-  // The breakpoint is md-reader's: at 1100px it drops the rail's column. Crossing it either way
-  // resets the switch to what that width wants — open beside the text, closed over it.
+  // 1100px, where global.css stops giving the rail a column of its own — the width md-reader's
+  // default grid uses for the same decision. Crossing it either way resets the switch to what
+  // that width wants: open beside the text, closed over it.
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1100px)");
     const apply = () => {

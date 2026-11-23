@@ -3,9 +3,16 @@
 @import "md-reader/styles/reader.css";
 @import "md-reader/styles/layout.css";
 
-/* The site is the markdown viewer with its own bar on top. Typography, colour, the text
-   column, the contents rail and the grid they sit in all come from md-reader; what is left
-   here is the bar, the footer, and the handful of pages that are not articles. */
+/* md-reader's own column grid — styles/grid.css — is deliberately not imported. It puts the
+   text column across the whole window with the rail hung off the right edge, and takes the rail
+   out of the document outright when it closes. This site wants the text and the rail centred
+   together as one block, and wants the rail to close by narrowing rather than vanishing, so it
+   writes that template itself further down instead of overriding one line at a time. That is the
+   arrangement md-reader documents: grid.css is the one file a host is expected to replace.
+
+   Everything else is still shared. Typography, colour, the bar's box, the text column's padding
+   and width, and the rails as sticky scrolling panels all come from md-reader; what is left here
+   is the grid, the bar's contents, the footer, and the pages that are not articles. */
 :root {
   /* The bar's height. md-reader positions the rail from this and keeps anchored headings
      from landing underneath it, so it has to match .mdr-header's real height. */
@@ -178,8 +185,8 @@ a:hover {
   margin-left: 0;
 }
 
-/* Below md-reader's rail breakpoint the rail has no column to leave room for: it opens over
-   the article instead, and the bar ends where the text does. */
+/* Below the rail breakpoint the rail has no column to leave room for: it opens over the
+   article instead, and the bar ends where the text does. */
 @media (max-width: 1100px) {
   .site-header[data-toc="on"] {
     --bar-rail: 0px;
@@ -268,39 +275,53 @@ a:focus-visible {
 
 /* ---------- the contents rail ---------- */
 
-/* md-reader hangs the rail off the window's right edge and lets the text centre in what is
+/* The site's own column grid, in place of md-reader's: see the note at the top of this file.
+
+   md-reader's hangs the rail off the window's right edge and lets the text centre in what is
    left, which on a wide screen opens a stretch of nothing between the two. Here the text and
    the rail are one block, centred together: the gutters are the grid's outer columns, the text
    column is exactly as wide as it needs to be, and the rail sits against it with .mdr-main's
    own padding as the gap. Closing the rail takes its column out of the block, and what is left
    — the text — recentres.
 
-   The track numbers md-reader assigns still hold: .mdr-main is column 2 and .mdr-toc column 3,
-   which is why the gutters are the columns on either side of them rather than margins. */
+   --rail is this file's, not md-reader's: there the rail's track collapses to nothing and the
+   element goes with it, and here it has to narrow while the rail is still painted, so that the
+   closing is something the eye can follow. */
 .mdr-layout {
+  --rail: var(--toc-w);
+
+  display: grid;
   grid-template-columns:
     minmax(0, 1fr)
     minmax(0, calc(var(--content-width) + var(--text-gutter) * 2))
-    var(--mdr-col-toc)
+    var(--rail)
     minmax(0, 1fr);
 }
 
-/* The gutter is the one in --text-gutter, which the bar and the grid are measured from too. */
+.mdr-layout[data-toc="off"] {
+  --rail: 0px;
+}
+
+/* A page with no rail at all — every page here that is not an article — must not leave the
+   rail's column behind as an empty gutter. This is what lets Layout.js say nothing about it. */
+.mdr-layout:not(:has(> .mdr-toc:not([hidden]))) {
+  --rail: 0px;
+}
+
 .mdr-main {
+  grid-column: 2;
+  /* The gutter is the one in --text-gutter, which the bar and the grid are measured from too. */
   padding-inline: var(--text-gutter);
 }
 
-/* md-reader takes the rail out of the grid outright when it is switched off. Here it closes
-   instead: the column narrows to nothing and the rail fades as it goes, so the text column
-   grows into the space rather than jumping into it. The rail has to keep its box through all
-   of that, which is why the display: none is overridden below. */
+.mdr-toc {
+  grid-column: 3;
+  overflow-x: hidden;
+}
+
 /* Only once the page has settled: see the note in Article.js about what moves on load. */
 .mdr-layout.toc-animated {
   transition: grid-template-columns 220ms ease;
-}
-
-.mdr-toc {
-  overflow-x: hidden;
 }
 
 .toc-animated > .mdr-toc {
@@ -310,7 +331,6 @@ a:focus-visible {
 /* A grid item will not shrink past its own padding and border, so a column closed to nothing
    would still leave a sliver of rail standing there. These close with it. */
 .mdr-layout[data-toc="off"] > .mdr-toc {
-  display: block;
   opacity: 0;
   padding-inline: 0;
   border-left-width: 0;
@@ -364,16 +384,29 @@ a:focus-visible {
 
 /* ---------- the contents rail on a narrow screen ---------- */
 
-/* md-reader takes the rail's column away below 1100px, because a column that narrow costs the
-   article more width than it gives back. The contents are still worth having there, so the
+/* Below 1100px a rail costs the article more width than it gives back in navigation, so it
+   stops being a column — the same breakpoint and the same reasoning as md-reader's own grid,
+   which is where this rule used to come from. The contents are still worth having, so the
    button opens them as a sheet under the bar instead: over the article rather than beside it,
-   which is the only place left for them. Article.js adds .toc-panel once it has measured the
-   window, so this never applies to a first paint that has not been measured yet.
+   which is the only place left for them. */
+@media (max-width: 1100px) {
+  .mdr-layout {
+    --rail: 0px;
+  }
+
+  /* Until Article.js has measured the window there is no .toc-panel, and a rail left in a
+     column that has closed to nothing would stand there as a sliver. */
+  .mdr-layout:not(.toc-panel) > .mdr-toc {
+    display: none;
+  }
+}
+
+/* Article.js adds .toc-panel once it has measured the window, so the sheet never applies to a
+   first paint that has not been measured yet.
 
    The rail keeps its zero-width column throughout — the sheet is positioned out of flow, so
    the text underneath keeps the whole window and nothing reflows when it opens. */
 .mdr-layout.toc-panel[data-toc="on"] > .mdr-toc:not([hidden]) {
-  display: block;
   position: fixed;
   top: var(--header-h);
   /* Hung from the right, under the button that opens it, and narrow enough that the article is

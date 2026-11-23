@@ -16,19 +16,15 @@ export const SETTINGS_KEY = "mdr:settings";
 export const DEFAULTS = { ...DEFAULT_SETTINGS, theme: "system", contentFont: "mono", fontSize: 16 };
 
 const isBrowser = typeof window !== "undefined";
-const store = createSettingsStore({ key: SETTINGS_KEY, defaults: DEFAULTS });
+
+// The theme is the only field written, and the only one read back — which is the store's own
+// `persist`, so storage can neither strand a returning visitor on the typography the site had
+// the day they last read something, nor hand the bootstrap script stale values to stamp on the
+// document before the page paints.
+const store = createSettingsStore({ key: SETTINGS_KEY, defaults: DEFAULTS, persist: ["theme"] });
 
 let current = null;
 const subscribers = new Set();
-
-// Only the theme is written back. Storing the rest would strand a returning visitor on
-// whatever the defaults were the day they last read something, and would give the bootstrap
-// script stale values to stamp on the document before the page even paints.
-function persist(theme) {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme }));
-  } catch {}
-}
 
 // The theme used to live in its own key as a bare string. Carry a returning visitor's choice
 // over once, then let it go.
@@ -37,8 +33,9 @@ function migrateLegacyTheme(settings) {
     const legacy = localStorage.getItem("theme-preference");
     if (legacy !== "light" && legacy !== "dark") return settings;
     localStorage.removeItem("theme-preference");
-    persist(legacy);
-    return { ...settings, theme: legacy };
+    const migrated = { ...settings, theme: legacy };
+    store.save(migrated);
+    return migrated;
   } catch {
     return settings;
   }
@@ -47,9 +44,7 @@ function migrateLegacyTheme(settings) {
 export function getSettings() {
   if (!isBrowser) return { ...DEFAULTS };
   if (!current) {
-    // Storage contributes the theme and nothing else, so an older stored shape cannot leak
-    // typography the site no longer uses.
-    const stored = { ...DEFAULTS, theme: store.load().theme };
+    const stored = store.load();
     current = stored.theme === "system" ? migrateLegacyTheme(stored) : stored;
   }
   return current;
@@ -57,7 +52,7 @@ export function getSettings() {
 
 export function updateSettings(patch) {
   current = { ...getSettings(), ...patch };
-  persist(current.theme);
+  store.save(current);
   applySettings(current);
   for (const fn of subscribers) fn(current, patch);
 }

@@ -75,9 +75,9 @@ describe("Reader", () => {
     expect(container.querySelector(".table-wrap > table")).toBeTruthy();
   });
 
-  // md-reader animates its way to a picked heading; here the click is caught first and the
-  // heading is simply there. One call, with no options, is how that is told apart: the reader's
-  // own handler would have asked for a smooth one.
+  // md-reader animates its way to a picked heading by default; the reader is mounted with a
+  // scrollTo that just jumps. One call, with no options, is how that is told apart: the default
+  // would have asked for a smooth one.
   it("jumps to a picked heading rather than animating to it", () => {
     const onNavigate = jest.fn();
     const { container } = render(<Reader html={HTML} onNavigate={onNavigate} />);
